@@ -98,6 +98,44 @@ conn = sqlite3.connect("scout_agent.db", check_same_thread=False)
 cursor = conn.cursor()
 
 cursor.executescript("""
+CREATE TABLE IF NOT EXISTS players (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    date_of_birth TEXT,
+    age_group TEXT,
+    position TEXT,
+    dominant_foot TEXT,
+    club TEXT,
+    nationality TEXT
+);
+CREATE TABLE IF NOT EXISTS sessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    player_id INTEGER REFERENCES players(id),
+    session_date TEXT,
+    session_type TEXT,
+    minutes_played INTEGER,
+    distance_covered_km REAL,
+    sprint_count INTEGER,
+    top_speed_kmh REAL,
+    passes_completed INTEGER,
+    passes_attempted INTEGER,
+    dribbles_completed INTEGER,
+    defensive_actions INTEGER,
+    goals INTEGER,
+    assists INTEGER,
+    chances_created INTEGER,
+    tackles_won INTEGER,
+    coachability_rating INTEGER,
+    attitude_score INTEGER,
+    consistency_rating INTEGER,
+    coach_notes TEXT
+);
+CREATE TABLE IF NOT EXISTS reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    player_id INTEGER REFERENCES players(id),
+    report_text TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
 CREATE TABLE IF NOT EXISTS report_edits (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     player_id INTEGER, edited_report TEXT, coach_notes TEXT,
