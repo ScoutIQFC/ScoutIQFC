@@ -97,13 +97,6 @@ if not check_password():
 conn = sqlite3.connect("scout_agent.db", check_same_thread=False)
 cursor = conn.cursor()
 
-# Seed demo data on first launch
-try:
-    from demo_data import seed_demo_data
-    seed_demo_data(conn)
-except Exception:
-    pass
-
 cursor.executescript("""
 CREATE TABLE IF NOT EXISTS report_edits (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -135,6 +128,13 @@ CREATE TABLE IF NOT EXISTS epl_reports (
 );
 """)
 conn.commit()
+
+# Seed demo data on first launch (after tables are created)
+try:
+    from demo_data import seed_demo_data
+    seed_demo_data(conn)
+except Exception:
+    pass
 
 st.set_page_config(
     page_title="Scout IQ·FC", page_icon="⚽",
