@@ -1369,19 +1369,19 @@ if st.session_state.mode == "youth":
         with c1:
             fig=go.Figure()
             fig.add_trace(go.Scatter(x=dates,y=[s[5] for s in sess],mode='lines+markers',line=dict(color='#1a3a8a',width=2.5),marker=dict(size=7,color='#1a3a8a'),fill='tozeroy',fillcolor='rgba(26,58,138,0.06)'))
-            fig.update_layout(title='Distance per Session',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category',tickfont=dict(size=10)),yaxis=dict(gridcolor='#f3f4f6',title='km',titlefont=dict(size=10)),height=240,showlegend=False)
+            fig.update_layout(title='Distance per Session',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category'),yaxis=dict(gridcolor='#f3f4f6',title='km'),height=240,showlegend=False)
             st.plotly_chart(fig,use_container_width=True)
         with c2:
             fig=go.Figure()
             fig.add_trace(go.Bar(x=dates,y=[s[6] for s in sess],marker_color='#3b82f6',opacity=0.8,marker_line_width=0))
-            fig.update_layout(title='Sprint Count',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category',tickfont=dict(size=10)),yaxis=dict(gridcolor='#f3f4f6'),height=240,showlegend=False)
+            fig.update_layout(title='Sprint Count',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category'),yaxis=dict(gridcolor='#f3f4f6'),height=240,showlegend=False)
             st.plotly_chart(fig,use_container_width=True)
 
         c3,c4=st.columns(2)
         with c3:
             fig=go.Figure()
             fig.add_trace(go.Scatter(x=dates,y=[round(s[8]/s[9]*100) if s[9]>0 else 0 for s in sess],mode='lines+markers',line=dict(color='#16a34a',width=2.5),marker=dict(size=7,color='#16a34a'),fill='tozeroy',fillcolor='rgba(22,163,74,0.06)'))
-            fig.update_layout(title='Pass Accuracy %',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category',tickfont=dict(size=10)),yaxis=dict(gridcolor='#f3f4f6',title='%',range=[0,100]),height=240,showlegend=False)
+            fig.update_layout(title='Pass Accuracy %',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category'),yaxis=dict(gridcolor='#f3f4f6',title='%',range=[0,100]),height=240,showlegend=False)
             st.plotly_chart(fig,use_container_width=True)
         with c4:
             cats=['Distance','Sprints','Passing','Attacking','Defending','Attitude']
@@ -1390,7 +1390,7 @@ if st.session_state.mode == "youth":
             norm=[min(round((v/m)*10,1),10) for v,m in zip(avgv,maxv)]
             fig=go.Figure()
             fig.add_trace(go.Scatterpolar(r=norm+[norm[0]],theta=cats+[cats[0]],fill='toself',fillcolor='rgba(26,58,138,0.1)',line=dict(color='#1a3a8a',width=2),marker=dict(size=5)))
-            fig.update_layout(title='Performance Profile',polar=dict(radialaxis=dict(visible=True,range=[0,10],gridcolor='#e5e7ef',tickfont=dict(size=8)),angularaxis=dict(gridcolor='#e5e7ef',tickfont=dict(size=10)),bgcolor='white'),paper_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),height=240,showlegend=False)
+            fig.update_layout(title='Performance Profile',polar=dict(radialaxis=dict(visible=True,range=[0,10],gridcolor='#e5e7ef'),angularaxis=dict(gridcolor='#e5e7ef'),bgcolor='white'),paper_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),height=240,showlegend=False)
             st.plotly_chart(fig,use_container_width=True)
 
         st.markdown('<div class="section-title">Development Indicators</div>', unsafe_allow_html=True)
@@ -1398,7 +1398,7 @@ if st.session_state.mode == "youth":
         fig.add_trace(go.Scatter(x=dates,y=[s[16] for s in sess],name='Coachability',line=dict(color='#1a3a8a',width=2),mode='lines+markers',marker=dict(size=6)))
         fig.add_trace(go.Scatter(x=dates,y=[s[17] for s in sess],name='Attitude',line=dict(color='#f5c842',width=2,dash='dash'),mode='lines+markers',marker=dict(size=6)))
         fig.add_trace(go.Scatter(x=dates,y=[s[18] for s in sess],name='Consistency',line=dict(color='#16a34a',width=2,dash='dot'),mode='lines+markers',marker=dict(size=6)))
-        fig.update_layout(title='Development Scores',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category'),yaxis=dict(gridcolor='#f3f4f6',range=[0,10],title='Score /10'),legend=dict(orientation='h',yanchor='bottom',y=1.02,xanchor='right',x=1,font=dict(size=11)),height=260)
+        fig.update_layout(title='Development Scores',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category'),yaxis=dict(gridcolor='#f3f4f6',range=[0,10],title='Score /10'),legend=dict(orientation='h',yanchor='bottom',y=1.02,xanchor='right',x=1),height=260)
         st.plotly_chart(fig,use_container_width=True)
 
     # Media
@@ -1591,11 +1591,11 @@ Complete all sections. No truncation."""
                     with cc1:
                         fig=go.Figure()
                         fig.add_trace(go.Bar(x=top8['Player'],y=top8['Goals'],marker_color='#1a3a8a',opacity=0.85,marker_line_width=0))
-                        fig.update_layout(title='Goals by Player',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=80),xaxis=dict(showgrid=False,tickangle=45,tickfont=dict(size=10)),yaxis=dict(gridcolor='#f3f4f6'),height=300,showlegend=False)
+                        fig.update_layout(title='Goals by Player',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=80),xaxis=dict(showgrid=False,tickangle=45),yaxis=dict(gridcolor='#f3f4f6'),height=300,showlegend=False)
                         st.plotly_chart(fig,use_container_width=True)
                     with cc2:
                         fig=go.Figure()
                         fig.add_trace(go.Bar(x=top8['Player'],y=top8['xG'],name='xG',marker_color='#f5c842',opacity=0.85,marker_line_width=0))
                         fig.add_trace(go.Bar(x=top8['Player'],y=top8['Goals'],name='Goals',marker_color='#1a3a8a',opacity=0.7,marker_line_width=0))
-                        fig.update_layout(title='xG vs Goals',barmode='group',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=80),xaxis=dict(showgrid=False,tickangle=45,tickfont=dict(size=10)),yaxis=dict(gridcolor='#f3f4f6'),height=300,legend=dict(orientation='h',yanchor='bottom',y=1.02,xanchor='right',x=1))
+                        fig.update_layout(title='xG vs Goals',barmode='group',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=80),xaxis=dict(showgrid=False,tickangle=45),yaxis=dict(gridcolor='#f3f4f6'),height=300,legend=dict(orientation='h',yanchor='bottom',y=1.02,xanchor='right',x=1))
                         st.plotly_chart(fig,use_container_width=True)
