@@ -826,7 +826,7 @@ def render_report(text, pid, pname, meta, is_pro=False):
     if ekey not in st.session_state:
         st.session_state[ekey] = False
 
-    # Action bar
+    # Action bar — small buttons
     c1,c2,c3,c4,c5 = st.columns([1,1,1,1,6])
     with c1:
         st.markdown('<div class="edit-btn">', unsafe_allow_html=True)
@@ -845,20 +845,16 @@ def render_report(text, pid, pname, meta, is_pro=False):
         st.markdown('</div>', unsafe_allow_html=True)
     with c4:
         st.markdown('<div class="regen-btn">', unsafe_allow_html=True)
-        if st.button("↺ New", key=f"rg_{pid}_{is_pro}"):
+        if st.button("↺ Redo", key=f"rg_{pid}_{is_pro}"):
             st.session_state[f"confirm_regen_{pid}_{is_pro}"] = True
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # Confirm regenerate
     if st.session_state.get(f"confirm_regen_{pid}_{is_pro}"):
         st.warning("This will replace the existing report. Confirm?")
-        cc1, cc2 = st.columns([1,5])
+        cc1, _ = st.columns([1,5])
         with cc1:
-            if st.button("Yes, regenerate", key=f"confirm_yes_{pid}_{is_pro}"):
-                if is_pro:
-                    cursor.execute("DELETE FROM epl_reports WHERE player_id=?", (pid,))
-                else:
-                    cursor.execute("DELETE FROM reports WHERE player_id=?", (pid,))
+            if st.button("Yes, regenerate", key=f"cy_{pid}_{is_pro}"):
+                cursor.execute("DELETE FROM epl_reports WHERE player_id=?" if is_pro else "DELETE FROM reports WHERE player_id=?", (pid,))
                 conn.commit()
                 st.session_state[f"confirm_regen_{pid}_{is_pro}"] = False
                 st.rerun()
@@ -883,33 +879,80 @@ def render_report(text, pid, pname, meta, is_pro=False):
             conn.commit(); st.session_state[ekey] = False; st.success("Saved"); st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
     else:
-        # Render report
-        st.markdown('<div class="report-wrapper">', unsafe_allow_html=True)
-        st.markdown(f'<div class="report-header"><div class="report-title">Scout IQ·FC — Scouting Report</div><div class="report-player-name">{pname}</div><div style="font-size:11px;color:#9ca3af;margin-top:6px;">{meta}</div></div>', unsafe_allow_html=True)
+        # ── REPORT DISPLAY — dark navy, gold accents, no white boxes ──
+        html = f"""
+        <div style="
+            background: #04080f;
+            border: 1px solid rgba(245,200,66,0.2);
+            border-radius: 16px;
+            padding: 44px 52px;
+            margin-top: 8px;
+            box-shadow: 0 4px 32px rgba(0,0,0,0.3);
+        ">
+            <div style="
+                font-size: 10px; font-weight: 700; color: #f5c842;
+                letter-spacing: 4px; text-transform: uppercase;
+                margin-bottom: 12px;
+            ">Scout IQ·FC &nbsp;—&nbsp; {"Pro Performance Audit" if is_pro else "Youth Scouting Report"}</div>
+            <div style="
+                font-family: 'Playfair Display', serif;
+                font-size: 40px; font-weight: 700; color: #ffffff;
+                line-height: 1.1; letter-spacing: -0.5px;
+                margin-bottom: 8px;
+            ">{pname}</div>
+            <div style="font-size: 12px; color: rgba(255,255,255,0.35); margin-bottom: 0;">{meta}</div>
+            <div style="border-top: 1px solid rgba(245,200,66,0.25); margin: 24px 0;"></div>
+        """
+
         in_exec = False
-        for line in active.split('\n'):
+        for line in active.split("\n"):
             line = line.strip()
             if not line:
                 if in_exec:
-                    st.markdown('</div>', unsafe_allow_html=True); in_exec = False
-                st.markdown('<div style="height:6px"></div>', unsafe_allow_html=True)
-            elif line.upper().startswith('EXECUTIVE SUMMARY'):
-                st.markdown('<div class="exec-summary">', unsafe_allow_html=True)
-                st.markdown(f'<div class="report-section-label">Executive Summary</div>', unsafe_allow_html=True)
+                    html += '</div>'
+                    in_exec = False
+                html += '<div style="height:6px"></div>'
+            elif line.upper().startswith("EXECUTIVE SUMMARY"):
+                html += """
+                <div style="
+                    background: rgba(245,200,66,0.06);
+                    border-left: 3px solid #f5c842;
+                    border-radius: 0 10px 10px 0;
+                    padding: 16px 20px;
+                    margin-bottom: 24px;
+                ">
+                <div style="font-size:9px;font-weight:700;color:#f5c842;letter-spacing:3px;text-transform:uppercase;margin-bottom:10px;">Executive Summary</div>
+                """
                 in_exec = True
-            elif line[0].isdigit() and '.' in line[:3]:
+            elif line[0].isdigit() and "." in line[:3]:
                 if in_exec:
-                    st.markdown('</div>', unsafe_allow_html=True); in_exec = False
-                st.markdown(f'<div class="report-section-label">{line}</div>', unsafe_allow_html=True)
+                    html += '</div>'
+                    in_exec = False
+                html += f"""
+                <div style="
+                    font-size: 9px; font-weight: 700; color: #f5c842;
+                    letter-spacing: 3px; text-transform: uppercase;
+                    margin: 28px 0 10px; padding-bottom: 8px;
+                    border-bottom: 1px solid rgba(255,255,255,0.07);
+                ">{line}</div>
+                """
             else:
-                clean = line.replace('**','').replace('--','').replace('#','')
-                st.markdown(f'<div class="report-para">{clean}</div>', unsafe_allow_html=True)
+                clean = line.replace("**","").replace("--","").replace("#","")
+                if clean:
+                    color = "rgba(255,255,255,0.75)" if in_exec else "rgba(255,255,255,0.6)"
+                    weight = "500" if in_exec else "400"
+                    html += f'<div style="font-size:14px;color:{color};line-height:1.9;margin-bottom:2px;font-weight:{weight};">{clean}</div>'
+
         if in_exec:
-            st.markdown('</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+            html += '</div>'
+        html += '</div>'
+        st.markdown(html, unsafe_allow_html=True)
 
         if notes:
-            st.markdown(f'<div class="coach-notes-wrap"><div class="coach-notes-label">Coach Annotations</div><div style="font-size:13px;color:#92400e;line-height:1.8;">{notes}</div></div>', unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="coach-notes-wrap" style="margin-top:12px;">                <div class="coach-notes-label">Coach Annotations</div>                <div style="font-size:13px;color:#92400e;line-height:1.8;">{notes}</div></div>',
+                unsafe_allow_html=True
+            )
 
 
 def sg(row, idx, default=0):
@@ -1593,6 +1636,28 @@ else:
                                 conn.commit(); imported+=1
                             st.success(f"Imported {imported} records for {team_name}"); st.rerun()
             except Exception as e: st.error(f"Error: {e}")
+
+    # ── DELETE TEAM DATA ──
+    with tab1:
+        st.markdown('<div class="section-title" style="margin-top:32px;">Manage Uploaded Data</div>', unsafe_allow_html=True)
+        cursor.execute("SELECT DISTINCT team FROM epl_players ORDER BY team")
+        del_teams = [r[0] for r in cursor.fetchall()]
+        if del_teams:
+            del_team = st.selectbox("Select team to delete", ["-- Select --"] + del_teams, key="del_team_sel")
+            if del_team != "-- Select --":
+                st.warning(f"This permanently deletes all data for **{del_team}**.")
+                if st.button(f"Delete {del_team}", key="del_team_btn"):
+                    pids_to_del = [r[0] for r in cursor.execute("SELECT id FROM epl_players WHERE team=?", (del_team,)).fetchall()]
+                    for p in pids_to_del:
+                        cursor.execute("DELETE FROM epl_sessions WHERE player_id=?", (p,))
+                        cursor.execute("DELETE FROM epl_reports WHERE player_id=?", (p,))
+                    cursor.execute("DELETE FROM epl_players WHERE team=?", (del_team,))
+                    conn.commit()
+                    st.success(f"{del_team} deleted. Refreshing...")
+                    st.session_state.selected_epl_player_id = None
+                    st.rerun()
+        else:
+            st.caption("No professional data uploaded yet.")
 
     with tab2:
         if not st.session_state.selected_epl_player_id:
