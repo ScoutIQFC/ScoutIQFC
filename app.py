@@ -438,68 +438,102 @@ def sg(row, idx, default=0):
 
 
 def build_youth_prompt(player, sessions):
+    # Calculate key metrics upfront to feed into prompt
+    sc = len(sessions)
+    avg_dist = round(sum(s[5] for s in sessions)/sc, 2) if sc else 0
+    avg_spr = round(sum(s[6] for s in sessions)/sc, 1) if sc else 0
+    peak_spd = max(s[7] for s in sessions) if sc else 0
+    total_passes_c = sum(s[8] for s in sessions)
+    total_passes_a = sum(s[9] for s in sessions)
+    pass_pct = round(total_passes_c/total_passes_a*100, 1) if total_passes_a > 0 else 0
+    total_drib = sum(s[10] for s in sessions)
+    total_def = sum(s[11] for s in sessions)
+    total_goals = sum(s[12] for s in sessions)
+    total_assists = sum(s[13] for s in sessions)
+    total_chances = sum(s[14] for s in sessions)
+    total_tackles = sum(s[15] for s in sessions)
+    avg_coach = round(sum(s[16] for s in sessions)/sc, 1) if sc else 0
+    avg_att = round(sum(s[17] for s in sessions)/sc, 1) if sc else 0
+    avg_cons = round(sum(s[18] for s in sessions)/sc, 1) if sc else 0
+    goals_per90 = round(total_goals/(sum(s[4] for s in sessions)/90), 2) if sessions else 0
+    assists_per90 = round(total_assists/(sum(s[4] for s in sessions)/90), 2) if sessions else 0
+    def_per90 = round(total_def/(sum(s[4] for s in sessions)/90), 2) if sessions else 0
+
     sessions_text = "\n".join([
-        f"- {s[2]} ({s[3]}): {s[4]} mins, {s[5]}km, {s[6]} sprints, top speed {s[7]}km/h, passes {s[8]}/{s[9]}, dribbles {s[10]}, defensive actions {s[11]}, goals {s[12]}, assists {s[13]}, chances {s[14]}, tackles {s[15]}. Coachability {s[16]}/10, attitude {s[17]}/10, consistency {s[18]}/10. Notes: {s[19]}"
+        f"- {s[2]} ({s[3]}): {s[4]} mins, {s[5]}km, {s[6]} sprints, top speed {s[7]}km/h, "
+        f"passes {s[8]}/{s[9]} ({round(s[8]/s[9]*100) if s[9]>0 else 0}%), "
+        f"dribbles {s[10]}, def actions {s[11]}, goals {s[12]}, assists {s[13]}, "
+        f"chances {s[14]}, tackles {s[15]}. "
+        f"Coachability {s[16]}/10, attitude {s[17]}/10, consistency {s[18]}/10. Notes: {s[19]}"
         for s in sessions
     ])
-    return f"""You are a senior youth football scout and player development specialist with 20 years of experience at academy level across Europe and South America. You write development reports that serve as a player professional CV read by academy directors, technical coaches and talent ID managers.
 
-Your reports are concise, direct and written in the language coaches use every day. No academic language. No AI phrases. No bullet points or dashes. Full sentences throughout. Maximum 4 pages when printed.
+    return f"""You are a senior scout and player development analyst. You write reports for academy directors and technical staff at professional and semi-professional clubs. Your reports are used to make real decisions about player contracts, promotion and development investment.
 
-PLAYER PROFILE:
-Name: {player[1]}
-Position: {player[4]}
-Date of birth: {player[2]}
-Age group: {player[3]}
-Club: {player[6]}
-Nationality: {player[7] or 'Unknown'}
-Dominant foot: {player[5]}
+CRITICAL RULES:
+- Every claim must reference a specific number from the data provided
+- No generic phrases like "shows promise" or "has potential" — only evidence-based statements
+- No bullet points, no dashes, no markdown
+- Full sentences only
+- Maximum 4 printed pages
+- Write like a UEFA Pro Licence coach briefing a technical director — direct, precise, no filler
 
-SESSION DATA ({len(sessions)} sessions):
+PLAYER: {player[1]} | {player[4]} | {player[3]} | {player[6]} | DOB: {player[2]} | {player[7] or 'Unknown'} | {player[5]} foot
+
+PRE-CALCULATED METRICS:
+- Sessions analysed: {sc}
+- Pass completion: {pass_pct}% ({total_passes_c}/{total_passes_a})
+- Goals per 90: {goals_per90} | Assists per 90: {assists_per90}
+- Defensive actions per 90: {def_per90}
+- Avg distance: {avg_dist}km | Avg sprints: {avg_spr} | Peak speed: {peak_spd}km/h
+- Total goal contributions: {total_goals+total_assists} (G{total_goals} A{total_assists})
+- Coachability avg: {avg_coach}/10 | Attitude avg: {avg_att}/10 | Consistency avg: {avg_cons}/10
+
+SESSION LOG:
 {sessions_text}
 
-Write a youth development scouting report with these sections. Every section complete. No bullet points. No dashes. Confident and direct.
+Write the report in this exact structure:
 
 EXECUTIVE SUMMARY
-4 sentences. Standout quality with one number. Biggest limitation with one number. Development trajectory. Recommendation.
+Four sentences only. Sentence 1: define this player by their single strongest metric with the number. Sentence 2: their most significant weakness with the number. Sentence 3: trajectory — use the trend across sessions to state whether they are improving, plateauing or declining. Sentence 4: one direct recommendation a technical director can act on tomorrow.
 
 1. PERFORMANCE RATING
-Score out of 10 with two data points. Category for age and position.
+Score out of 10. One sentence with exactly two data points justifying the score. One sentence placing this in context — is this above, at or below expectation for this age group and position.
 
 2. TECHNICAL PROFILE
-Pass completion rate, dribble rate, defensive actions per 90, goal and assist involvement per 90. Two sentences on quality relative to age and position. Position-appropriate assessment.
+Use the pre-calculated metrics. State pass completion rate and what it means for a {player[4]} at {player[3]} level. State dribble output and what it indicates about 1v1 quality. State defensive actions per 90 and whether this reflects adequate positional discipline for the role. State goal and assist involvement per 90 and whether the attacking output is sufficient. Close with one sentence verdict on overall technical standing.
 
 3. PHYSICAL PROFILE
-Average distance, average sprints, peak speed. Two sentences on whether output is elite, adequate or concerning. Flag any session with output drop over 15 percent.
+State average distance, average sprint count and peak recorded speed with exact numbers. Compare each figure to what is typical for a {player[4]} at {player[3]} — state explicitly whether each metric is elite, adequate or below standard. Identify the single session with the lowest physical output, name the date, and give one sentence on what may have caused the drop.
 
 4. MENTAL AND ATTITUDE PROFILE
-Coachability, attitude and consistency averages and trend. Two sentences on development potential. One specific behavioural recommendation.
+State the exact average scores for coachability, attitude and consistency. Identify the trend — are scores rising, falling or flat across the session window. State what this means for the player's response to coaching pressure. Give one specific instruction to the coaching staff on how to communicate with this player based on the scores.
 
 5. BEST POSITION NOW AND FUTURE
-Current best position from data. One alternative position to trial with justification. If struggling in current role state this directly.
+State the position this player should play right now based on the data — not their listed position if the data suggests otherwise. State one alternative position, explain in two sentences why the metrics support this, and what it would unlock developmentally. If the data suggests the player is being played out of position, say this directly.
 
-6. SHORT TERM RECOMMENDATIONS (Next 4 to 8 weeks)
-Three specific training recommendations. For each: current metric, target metric, training intervention.
+6. SHORT TERM TRAINING PRIORITIES (Next 4 to 8 weeks)
+Three interventions only. For each: name the specific metric that needs improvement, state the current figure, state the target figure, and describe the exact training format that would address it. Be specific enough that a coach could plan the session from reading this section alone.
 
-7. MEDIUM TERM DEVELOPMENT PLAN (This season)
-Three measurable development targets. Include one out-of-the-box recommendation.
+7. SEASON DEVELOPMENT TARGETS
+Three measurable targets for the remainder of the season. Each must have a numeric baseline, a numeric target and a timeframe. Include one unconventional recommendation — a position change, specific opposition type, individual programme or methodology that could accelerate development beyond the standard pathway.
 
-8. LONG TERM CEILING AND PATHWAY
-Realistic ceiling with three data points. One paragraph at age 21 without intervention. One paragraph with recommendations followed.
+8. CEILING AND LONG TERM PATHWAY
+State the realistic maximum level for this player: local academy, regional, national or professional pathway. Back this with exactly three data points. Write one paragraph on where this player is at 21 if nothing changes. Write one paragraph on what becomes possible if the recommendations in this report are implemented.
 
-9. INJURY AND LOAD WATCH
-Short term, medium term and long term assessment.
+9. LOAD AND INJURY WATCH
+Short term (4 weeks): flag any physical output patterns that indicate fatigue or overload risk. Medium term (3 months): identify any biomechanical or load patterns that could develop into injury. Long term: assess whether the current physical development trajectory is sustainable. If no concerns exist at any level, state this with the supporting data.
 
-10. MAN MANAGEMENT GUIDE
-Short term feedback approach. This season management. Long term psychological readiness.
+10. COACHING AND MANAGEMENT GUIDE
+Short term: how to deliver feedback to this specific player based on their attitude and coachability scores. This season: how to manage their minutes and challenge level to maintain development without burnout. Long term: one honest assessment of whether this player has the psychological profile for the next level, and what evidence supports that view.
 
-11. TRAINING SESSION IDEAS
-Two specific session formats. Name, setup, metric targeted, why it suits this player.
+11. SESSION DESIGN IDEAS
+Two training sessions tailored to this player's specific development needs. For each: give the session a name, describe the setup in two sentences, state the exact metric it addresses, and explain why this format is appropriate for this player's profile. These must be practical enough to run at a standard academy training facility.
 
-12. SCOUTING VERDICT
-Recommendation with three data justifications. One memorable final sentence.
+12. SCOUT VERDICT
+State your recommendation in one of four categories: Continue Monitoring, Increase Development Investment, Priority Development Case, or Recommend for Promotion. Follow with three sentences, each referencing a specific number from this report. Close with one sentence — the kind a scout would say out loud to a colleague — that captures this player in plain language.
 
-No bullet points. No dashes. No markdown. Direct, clear and actionable."""
+Write every section completely. No section can be shortened or skipped. Reference specific numbers throughout. No filler. No hedging. No generic language."""
 
 
 # ── DATA ──
