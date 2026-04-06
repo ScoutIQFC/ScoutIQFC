@@ -26,10 +26,9 @@ def check_password():
     if st.session_state.get("authenticated"):
         return True
 
-    # Init inquiry state
-    if "show_inquiry" not in st.session_state:
-        st.session_state["show_inquiry"] = False
-    if "inquiry_sent" not in st.session_state:
+    if "login_tab" not in st.session_state:
+        st.session_state["login_tab"] = "signin"
+    if "show_forgot" not in st.session_state:
         st.session_state["show_forgot"] = False
 
     st.markdown("""
@@ -41,7 +40,7 @@ def check_password():
     #MainMenu, footer, header { visibility: hidden; }
     .block-container { padding: 0 !important; max-width: 100% !important; }
 
-    /* Background */
+    /* Background grid */
     .login-bg {
         position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 0;
         background:
@@ -50,85 +49,216 @@ def check_password():
             #04080f;
     }
     .login-bg::before {
-        content: '';
-        position: absolute; inset: 0;
+        content: ''; position: absolute; inset: 0;
         background-image:
-            linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
         background-size: 56px 56px;
     }
 
-    /* Layout */
-    .login-page { position: relative; z-index: 1; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 32px 20px; }
-    .login-box { width: 100%; max-width: 440px; }
-
     /* Brand */
-    .brand { text-align: center; margin-bottom: 36px; }
-    .brand-pre { font-size: 10px; font-weight: 600; letter-spacing: 4px; color: rgba(245,200,66,0.6); text-transform: uppercase; margin-bottom: 10px; }
-    .brand-name { font-family: 'Playfair Display', serif; font-size: 54px; font-weight: 700; color: #fff; line-height: 1; letter-spacing: -1px; margin-bottom: 10px; }
+    .brand { text-align: center; margin-bottom: 32px; padding-top: 48px; }
+    .brand-pre { font-size: 10px; font-weight: 600; letter-spacing: 4px; color: rgba(245,200,66,0.65); text-transform: uppercase; margin-bottom: 10px; }
+    .brand-name { font-family: 'Playfair Display', serif; font-size: 52px; font-weight: 700; color: #fff; line-height: 1; letter-spacing: -1px; margin-bottom: 10px; }
     .brand-name .fc { color: #f5c842; font-style: italic; }
-    .brand-tag { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.5); letter-spacing: 4px; text-transform: uppercase; }
+    .brand-tag { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.45); letter-spacing: 4px; text-transform: uppercase; }
+
+    /* Nav buttons - small pill style like image 3 */
+    .nav-row { display: flex; justify-content: center; gap: 8px; margin-bottom: 28px; }
+    .nav-pill {
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 100px; padding: 8px 20px;
+        font-size: 12px; font-weight: 600;
+        color: rgba(255,255,255,0.6);
+        cursor: pointer; transition: all 0.2s;
+        white-space: nowrap;
+    }
+    .nav-pill:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    .nav-pill.active { background: #f5c842; color: #04080f; border-color: #f5c842; }
+
+    /* Override streamlit buttons for nav — pill style */
+    .nav-btn .stButton > button {
+        background: rgba(255,255,255,0.08) !important;
+        color: rgba(255,255,255,0.65) !important;
+        border: 1px solid rgba(255,255,255,0.12) !important;
+        border-radius: 100px !important;
+        font-family: 'Outfit', sans-serif !important;
+        font-size: 12px !important; font-weight: 600 !important;
+        padding: 7px 20px !important;
+        width: auto !important; margin-top: 0 !important;
+        box-shadow: none !important;
+        letter-spacing: 0.3px !important;
+        transition: all 0.2s !important;
+    }
+    .nav-btn .stButton > button:hover {
+        background: rgba(255,255,255,0.14) !important;
+        color: #fff !important; transform: none !important;
+        box-shadow: none !important;
+    }
+    .nav-btn-active .stButton > button {
+        background: #f5c842 !important;
+        color: #04080f !important;
+        border-color: #f5c842 !important;
+    }
 
     /* Card */
-    .login-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 36px 32px 28px; backdrop-filter: blur(12px); }
+    .login-card {
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 20px; padding: 32px 28px 24px;
+        backdrop-filter: blur(12px);
+    }
+    .card-title { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .card-sub { font-size: 12px; color: rgba(255,255,255,0.38); margin-bottom: 20px; }
 
-    /* Tabs */
-    .tab-row { display: flex; gap: 4px; background: rgba(255,255,255,0.04); border-radius: 10px; padding: 4px; margin-bottom: 28px; }
-    .tab-btn { flex: 1; text-align: center; padding: 8px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.4); cursor: pointer; border-radius: 7px; transition: all 0.2s; }
-    .tab-btn.active { background: rgba(255,255,255,0.1); color: #fff; }
+    /* Field labels */
+    .field-label {
+        font-size: 10px; font-weight: 700;
+        color: rgba(255,255,255,0.4);
+        letter-spacing: 2px; text-transform: uppercase;
+        margin-bottom: 6px; margin-top: 14px; display: block;
+    }
+    .stTextInput label, .stSelectbox label, .stTextArea label { display: none !important; }
 
-    /* Fields */
-    .field-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.4); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; margin-top: 16px; display: block; }
-    .stTextInput label { display: none !important; }
+    /* White inputs — dark text */
     .stTextInput > div > div {
-        background: rgba(255,255,255,0.92) !important;
-        border: 1.5px solid rgba(255,255,255,0.15) !important;
+        background: rgba(255,255,255,0.93) !important;
+        border: 1.5px solid rgba(255,255,255,0.12) !important;
         border-radius: 10px !important;
     }
     .stTextInput > div > div:focus-within {
         background: #fff !important;
         border-color: #f5c842 !important;
-        box-shadow: 0 0 0 3px rgba(245,200,66,0.15) !important;
+        box-shadow: 0 0 0 3px rgba(245,200,66,0.12) !important;
     }
-    .stTextInput input { color: #0d1117 !important; font-family: 'Outfit', sans-serif !important; font-size: 14px !important; padding: 12px 14px !important; }
+    .stTextInput input {
+        color: #0d1117 !important;
+        font-family: 'Outfit', sans-serif !important;
+        font-size: 14px !important; padding: 12px 14px !important;
+    }
     .stTextInput input::placeholder { color: #94a3b8 !important; }
-    .stTextArea label { display: none !important; }
-    .stTextArea textarea { color: #0d1117 !important; background: rgba(255,255,255,0.92) !important; border: 1.5px solid rgba(255,255,255,0.15) !important; border-radius: 10px !important; font-family: 'Outfit', sans-serif !important; font-size: 13px !important; }
-    .stSelectbox label { display: none !important; }
-    .stSelectbox > div > div { background: rgba(255,255,255,0.92) !important; border: 1.5px solid rgba(255,255,255,0.15) !important; border-radius: 10px !important; color: #0d1117 !important; }
-
-    /* Primary button */
-    .stButton > button {
-        background: linear-gradient(135deg, #f5c842 0%, #e6a817 100%) !important;
-        color: #04080f !important; border: none !important;
-        border-radius: 10px !important; font-family: 'Outfit', sans-serif !important;
-        font-weight: 700 !important; font-size: 14px !important;
-        padding: 13px 0 !important; width: 100% !important;
-        margin-top: 20px !important;
-        box-shadow: 0 6px 20px rgba(245,200,66,0.25) !important;
-        transition: all 0.2s !important; letter-spacing: 0.3px !important;
+    .stTextArea textarea {
+        color: #0d1117 !important;
+        background: rgba(255,255,255,0.93) !important;
+        border: 1.5px solid rgba(255,255,255,0.12) !important;
+        border-radius: 10px !important;
+        font-family: 'Outfit', sans-serif !important; font-size: 13px !important;
     }
-    .stButton > button:hover { box-shadow: 0 8px 28px rgba(245,200,66,0.35) !important; transform: translateY(-1px) !important; }
+    .stSelectbox > div > div {
+        background: rgba(255,255,255,0.93) !important;
+        border: 1.5px solid rgba(255,255,255,0.12) !important;
+        border-radius: 10px !important; color: #0d1117 !important;
+    }
 
-    /* Error */
-    .err-pill { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #fca5a5; text-align: center; margin-bottom: 16px; }
-    .ok-pill { background: rgba(22,163,74,0.12); border: 1px solid rgba(22,163,74,0.3); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #86efac; text-align: center; margin-bottom: 16px; }
+    /* Primary CTA — pill style like image 3 but gold */
+    .cta-btn .stButton > button {
+        background: #f5c842 !important;
+        color: #04080f !important; border: none !important;
+        border-radius: 100px !important;
+        font-family: 'Outfit', sans-serif !important;
+        font-weight: 700 !important; font-size: 13px !important;
+        padding: 12px 0 !important; width: 100% !important;
+        margin-top: 20px !important;
+        box-shadow: 0 4px 16px rgba(245,200,66,0.2) !important;
+        letter-spacing: 0.3px !important;
+    }
+    .cta-btn .stButton > button:hover {
+        box-shadow: 0 6px 24px rgba(245,200,66,0.3) !important;
+        transform: translateY(-1px) !important;
+    }
 
-    /* Footer links */
-    .login-links { display: flex; justify-content: space-between; margin-top: 20px; }
-    .login-link { font-size: 11px; color: rgba(255,255,255,0.3); cursor: pointer; }
-    .login-link:hover { color: rgba(245,200,66,0.7); }
-    .login-link a { color: inherit; text-decoration: none; }
+    /* Secondary pill — ghost */
+    .ghost-btn .stButton > button {
+        background: rgba(255,255,255,0.06) !important;
+        color: rgba(255,255,255,0.55) !important;
+        border: 1px solid rgba(255,255,255,0.12) !important;
+        border-radius: 100px !important;
+        font-family: 'Outfit', sans-serif !important;
+        font-weight: 600 !important; font-size: 12px !important;
+        padding: 9px 0 !important; width: 100% !important;
+        margin-top: 10px !important; box-shadow: none !important;
+        letter-spacing: 0.3px !important;
+    }
+    .ghost-btn .stButton > button:hover {
+        background: rgba(255,255,255,0.1) !important;
+        color: #fff !important; transform: none !important;
+    }
 
-    /* Stats bar */
-    .stats-bar { display: flex; justify-content: center; gap: 40px; margin-top: 32px; padding-top: 28px; border-top: 1px solid rgba(255,255,255,0.06); }
+    /* Notifications */
+    .err-pill { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #fca5a5; text-align: center; margin-bottom: 14px; }
+    .ok-pill { background: rgba(22,163,74,0.1); border: 1px solid rgba(22,163,74,0.25); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #86efac; text-align: center; margin-bottom: 14px; }
+
+    /* Forgot/links */
+    .subtle-link { font-size: 11px; color: rgba(255,255,255,0.28); text-align: right; margin-top: 8px; cursor: pointer; }
+    .subtle-link:hover { color: rgba(245,200,66,0.6); }
+
+    /* Divider */
+    .divider { border: none; border-top: 1px solid rgba(255,255,255,0.07); margin: 20px 0 16px; }
+
+    /* Stats */
+    .stats-bar { display: flex; justify-content: center; gap: 36px; margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.05); }
     .stat { text-align: center; }
-    .stat-n { font-size: 20px; font-weight: 700; color: #f5c842; line-height: 1; }
-    .stat-l { font-size: 9px; color: rgba(255,255,255,0.25); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 4px; }
+    .stat-n { font-size: 18px; font-weight: 700; color: #f5c842; line-height: 1; }
+    .stat-l { font-size: 9px; color: rgba(255,255,255,0.22); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 3px; }
     </style>
     <div class="login-bg"></div>
     """, unsafe_allow_html=True)
 
+    tab_mode = st.session_state.get("login_tab", "signin")
+
+    # Full page forms for demo/contact
+    if tab_mode == "demo":
+        _, col, _ = st.columns([1, 1.4, 1])
+        with col:
+            st.markdown('<div style="position:relative;z-index:2;padding-top:60px;">', unsafe_allow_html=True)
+            st.markdown('<div class="brand"><div class="brand-pre">Talent Intelligence Platform</div><div class="brand-name">Scout IQ·<span class="fc">FC</span></div></div>', unsafe_allow_html=True)
+            st.markdown('<div class="login-card"><div class="card-title">Request a Demo</div><div class="card-sub">Get a personalised walkthrough from our team within 24 hours</div>', unsafe_allow_html=True)
+            if st.session_state.get("auth_error"): st.session_state["auth_error"] = False
+            st.markdown('<span class="field-label">Full Name</span>', unsafe_allow_html=True)
+            d_name = st.text_input("dn", placeholder="Your full name", label_visibility="collapsed", key="demo_name")
+            st.markdown('<span class="field-label">Email Address</span>', unsafe_allow_html=True)
+            d_email = st.text_input("de", placeholder="your@email.com", label_visibility="collapsed", key="demo_email")
+            st.markdown('<span class="field-label">Academy / Club</span>', unsafe_allow_html=True)
+            d_club = st.text_input("dc", placeholder="Club or academy name", label_visibility="collapsed", key="demo_club")
+            st.markdown('<span class="field-label">Your Role</span>', unsafe_allow_html=True)
+            d_role = st.selectbox("dr", ["Head Coach", "Academy Director", "Technical Director", "Scout", "Club Owner", "Other"], label_visibility="collapsed", key="demo_role")
+            st.markdown('<span class="field-label">Message (optional)</span>', unsafe_allow_html=True)
+            d_msg = st.text_area("dm", placeholder="Anything you would like us to know...", label_visibility="collapsed", key="demo_msg", height=80)
+            st.markdown('<div class="cta-btn">', unsafe_allow_html=True)
+            if st.button("Send Demo Request", key="submit_demo"):
+                if d_name and d_email:
+                    try:
+                        import smtplib
+                        from email.mime.text import MIMEText
+                        msg = MIMEText(f"Demo Request\n\nName: {d_name}\nEmail: {d_email}\nClub: {d_club}\nRole: {d_role}\nMessage: {d_msg}")
+                        msg['Subject'] = f"Scout IQ FC - Demo Request from {d_name}"
+                        msg['From'] = "scoutiqfc@gmail.com"
+                        msg['To'] = "scoutiqfc@gmail.com"
+                    except Exception:
+                        pass
+                    st.session_state["login_tab"] = "demo_sent"; st.rerun()
+                else:
+                    st.markdown('<div class="err-pill">Please fill in your name and email</div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown('<div class="ghost-btn">', unsafe_allow_html=True)
+            if st.button("Back to Sign In", key="back_from_demo"):
+                st.session_state["login_tab"] = "signin"; st.rerun()
+            st.markdown('</div></div></div>', unsafe_allow_html=True)
+        return False
+
+    if tab_mode == "demo_sent":
+        _, col, _ = st.columns([1, 1.4, 1])
+        with col:
+            st.markdown('<div style="position:relative;z-index:2;padding-top:100px;">', unsafe_allow_html=True)
+            st.markdown('<div class="login-card" style="text-align:center;padding:48px 32px;"><div style="font-size:48px;margin-bottom:16px;">✅</div><div class="card-title">Request Received</div><div class="card-sub" style="margin-top:8px;">Thank you. Our team will be in touch within 24 hours to schedule your personalised demo.</div>', unsafe_allow_html=True)
+            st.markdown('<div class="ghost-btn" style="margin-top:24px;">', unsafe_allow_html=True)
+            if st.button("Back to Sign In", key="back_signin_d"):
+                st.session_state["login_tab"] = "signin"; st.rerun()
+            st.markdown('</div></div></div>', unsafe_allow_html=True)
+        return False
+
+    # Main sign in page
     _, col, _ = st.columns([1, 1.4, 1])
     with col:
         st.markdown('<div style="position:relative;z-index:2;">', unsafe_allow_html=True)
@@ -142,117 +272,63 @@ def check_password():
         </div>
         """, unsafe_allow_html=True)
 
-        # Tabs
-        tab_mode = st.session_state.get("login_tab", "signin")
-
-        tab_col1, tab_col2, tab_col3 = st.columns(3)
-        with tab_col1:
-            if st.button("Sign In", key="tab_signin"):
+        # Nav pills
+        n1, n2, n3 = st.columns(3)
+        with n1:
+            st.markdown('<div class="nav-btn nav-btn-active">', unsafe_allow_html=True)
+            if st.button("Sign In", key="nav_signin"):
                 st.session_state["login_tab"] = "signin"; st.rerun()
-        with tab_col2:
-            if st.button("Request Demo", key="tab_demo"):
+            st.markdown('</div>', unsafe_allow_html=True)
+        with n2:
+            st.markdown('<div class="nav-btn">', unsafe_allow_html=True)
+            if st.button("Request Demo", key="nav_demo"):
                 st.session_state["login_tab"] = "demo"; st.rerun()
-        with tab_col3:
-            if st.button("Contact Us", key="tab_contact"):
-                st.session_state["login_tab"] = "contact"; st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
+        with n3:
+            st.markdown('<div class="nav-btn">', unsafe_allow_html=True)
+            if st.button("Create Account", key="nav_create"):
+                st.session_state["login_tab"] = "create"; st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
 
+        # Login card
         st.markdown('<div class="login-card">', unsafe_allow_html=True)
 
-        if tab_mode == "signin" or tab_mode is None:
-            if st.session_state.get("auth_error"):
-                st.markdown('<div class="err-pill">Incorrect username or password</div>', unsafe_allow_html=True)
-            if st.session_state.get("show_forgot"):
-                st.markdown('<div class="ok-pill">Password reset link sent to your registered email</div>', unsafe_allow_html=True)
-                st.session_state["show_forgot"] = False
+        if st.session_state.get("auth_error"):
+            st.markdown('<div class="err-pill">Incorrect username or password — please try again</div>', unsafe_allow_html=True)
+        if st.session_state.get("show_forgot"):
+            st.markdown('<div class="ok-pill">Password reset instructions sent to your email</div>', unsafe_allow_html=True)
+            st.session_state["show_forgot"] = False
 
-            st.markdown('<span class="field-label">Username</span>', unsafe_allow_html=True)
-            st.text_input("u", key="login_user", placeholder="Enter your username", label_visibility="collapsed")
-            st.markdown('<span class="field-label">Password</span>', unsafe_allow_html=True)
-            st.text_input("p", type="password", key="login_pass", placeholder="Enter your password", label_visibility="collapsed")
-            st.button("Sign In →", on_click=password_entered)
+        st.markdown('<span class="field-label">Username</span>', unsafe_allow_html=True)
+        st.text_input("u", key="login_user", placeholder="Enter your username", label_visibility="collapsed")
+        st.markdown('<span class="field-label">Password</span>', unsafe_allow_html=True)
+        st.text_input("p", type="password", key="login_pass", placeholder="Enter your password", label_visibility="collapsed")
 
-            st.markdown("""
-            <div class="login-links">
-                <span class="login-link">New here? Request a demo →</span>
-                <span class="login-link" id="forgot-link">Forgot password?</span>
-            </div>
-            """, unsafe_allow_html=True)
-            fc1, fc2 = st.columns(2)
-            with fc2:
-                if st.button("Forgot password?", key="forgot_btn"):
-                    st.session_state["show_forgot"] = True; st.rerun()
+        st.markdown('<div class="cta-btn">', unsafe_allow_html=True)
+        st.button("Sign In →", on_click=password_entered)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-        elif tab_mode == "demo":
-            st.markdown('<div style="font-size:15px;font-weight:600;color:#fff;margin-bottom:4px;">Request a Demo</div>', unsafe_allow_html=True)
-            st.markdown('<div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:16px;">We will set you up with a personalised walkthrough</div>', unsafe_allow_html=True)
-            st.markdown('<span class="field-label">Full Name</span>', unsafe_allow_html=True)
-            d_name = st.text_input("dn", placeholder="Your full name", label_visibility="collapsed", key="demo_name")
-            st.markdown('<span class="field-label">Email Address</span>', unsafe_allow_html=True)
-            d_email = st.text_input("de", placeholder="your@email.com", label_visibility="collapsed", key="demo_email")
-            st.markdown('<span class="field-label">Academy / Club</span>', unsafe_allow_html=True)
-            d_club = st.text_input("dc", placeholder="Club or academy name", label_visibility="collapsed", key="demo_club")
-            st.markdown('<span class="field-label">Role</span>', unsafe_allow_html=True)
-            d_role = st.selectbox("dr", ["Head Coach", "Academy Director", "Technical Director", "Scout", "Club Owner", "Other"], label_visibility="collapsed", key="demo_role")
-            if st.button("Request Demo →", key="submit_demo"):
-                if d_name and d_email:
-                    st.session_state["login_tab"] = "demo_sent"
-                    st.rerun()
-                else:
-                    st.markdown('<div class="err-pill">Please fill in your name and email</div>', unsafe_allow_html=True)
+        # Forgot password
+        fp1, fp2 = st.columns([3,2])
+        with fp2:
+            st.markdown('<div class="ghost-btn">', unsafe_allow_html=True)
+            if st.button("Forgot password?", key="forgot_btn"):
+                st.session_state["show_forgot"] = True; st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
 
-        elif tab_mode == "demo_sent":
-            st.markdown("""
-            <div style="text-align:center;padding:20px 0;">
-                <div style="font-size:40px;margin-bottom:12px;">✅</div>
-                <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:8px;">Request Received</div>
-                <div style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.7;">
-                    Thank you. Our team will be in touch within 24 hours to schedule your personalised demo of Scout IQ·FC.
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            if st.button("Back to Sign In", key="back_signin"):
-                st.session_state["login_tab"] = "signin"; st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)  # close card
 
-        elif tab_mode == "contact":
-            st.markdown('<div style="font-size:15px;font-weight:600;color:#fff;margin-bottom:4px;">Get in Touch</div>', unsafe_allow_html=True)
-            st.markdown('<div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:16px;">Questions, partnerships or press enquiries</div>', unsafe_allow_html=True)
-            st.markdown('<span class="field-label">Name</span>', unsafe_allow_html=True)
-            c_name = st.text_input("cn", placeholder="Your name", label_visibility="collapsed", key="cont_name")
-            st.markdown('<span class="field-label">Email</span>', unsafe_allow_html=True)
-            c_email = st.text_input("ce", placeholder="your@email.com", label_visibility="collapsed", key="cont_email")
-            st.markdown('<span class="field-label">Reason for Enquiry</span>', unsafe_allow_html=True)
-            c_reason = st.selectbox("cr", ["General Enquiry", "Partnership Opportunity", "Press / Media", "Technical Support", "Pricing"], label_visibility="collapsed", key="cont_reason")
-            st.markdown('<span class="field-label">Message</span>', unsafe_allow_html=True)
-            c_msg = st.text_area("cm", placeholder="Tell us how we can help...", label_visibility="collapsed", key="cont_msg", height=100)
-            if st.button("Send Message →", key="submit_contact"):
-                if c_name and c_email and c_msg:
-                    st.session_state["login_tab"] = "contact_sent"
-                    st.rerun()
-                else:
-                    st.markdown('<div class="err-pill">Please fill in all fields</div>', unsafe_allow_html=True)
+        # Create account placeholder
+        if tab_mode == "create":
+            st.markdown('<div class="login-card" style="margin-top:12px;text-align:center;padding:24px;"><div style="font-size:13px;color:rgba(255,255,255,0.5);">Account creation coming soon. <br>Request a demo to get early access.</div></div>', unsafe_allow_html=True)
 
-        elif tab_mode == "contact_sent":
-            st.markdown("""
-            <div style="text-align:center;padding:20px 0;">
-                <div style="font-size:40px;margin-bottom:12px;">📩</div>
-                <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:8px;">Message Sent</div>
-                <div style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.7;">
-                    Thanks for reaching out. We'll get back to you within 24 hours.
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            if st.button("Back to Sign In", key="back_signin2"):
-                st.session_state["login_tab"] = "signin"; st.rerun()
-
-        st.markdown('</div>', unsafe_allow_html=True)  # close login-card
-
-        # Stats
+        # Stats bar
         st.markdown("""
         <div class="stats-bar">
-            <div class="stat"><div class="stat-n">100+</div><div class="stat-l">Players Tracked</div></div>
-            <div class="stat"><div class="stat-n">AI</div><div class="stat-l">Powered Reports</div></div>
+            <div class="stat"><div class="stat-n">100+</div><div class="stat-l">Players</div></div>
+            <div class="stat"><div class="stat-n">AI</div><div class="stat-l">Reports</div></div>
             <div class="stat"><div class="stat-n">3+</div><div class="stat-l">Academies</div></div>
-            <div class="stat"><div class="stat-n">Beta</div><div class="stat-l">Live Now</div></div>
+            <div class="stat"><div class="stat-n">Beta</div><div class="stat-l">Live</div></div>
         </div>
         """, unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
