@@ -26,197 +26,239 @@ def check_password():
     if st.session_state.get("authenticated"):
         return True
 
+    # Init inquiry state
+    if "show_inquiry" not in st.session_state:
+        st.session_state["show_inquiry"] = False
+    if "inquiry_sent" not in st.session_state:
+        st.session_state["show_forgot"] = False
+
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,400&display=swap');
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body, [class*="css"] {
-        background: #04080f !important;
-        font-family: 'Outfit', sans-serif !important;
-    }
-    .stApp {
-        background: #04080f !important;
-        min-height: 100vh;
-    }
+    html, body, [class*="css"] { background: #04080f !important; font-family: 'Outfit', sans-serif !important; }
+    .stApp { background: #04080f !important; min-height: 100vh; }
     #MainMenu, footer, header { visibility: hidden; }
     .block-container { padding: 0 !important; max-width: 100% !important; }
 
-    /* Animated background */
+    /* Background */
     .login-bg {
-        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 0;
         background:
-            radial-gradient(ellipse 80% 60% at 20% 20%, rgba(26,58,138,0.4) 0%, transparent 60%),
-            radial-gradient(ellipse 60% 80% at 80% 80%, rgba(15,31,92,0.5) 0%, transparent 60%),
-            radial-gradient(ellipse 40% 40% at 60% 10%, rgba(245,200,66,0.08) 0%, transparent 50%),
+            radial-gradient(ellipse 70% 50% at 15% 15%, rgba(26,58,138,0.45) 0%, transparent 55%),
+            radial-gradient(ellipse 50% 60% at 85% 85%, rgba(10,20,70,0.5) 0%, transparent 55%),
             #04080f;
-        z-index: 0;
     }
-
-    /* Grid lines */
     .login-bg::before {
         content: '';
-        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+        position: absolute; inset: 0;
         background-image:
-            linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
-        background-size: 60px 60px;
+            linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+        background-size: 56px 56px;
     }
 
-    .login-outer {
-        position: relative; z-index: 1;
-        min-height: 100vh;
-        display: flex; align-items: center; justify-content: center;
-        padding: 40px 20px;
-    }
-
-    .login-container {
-        width: 100%; max-width: 420px;
-    }
+    /* Layout */
+    .login-page { position: relative; z-index: 1; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 32px 20px; }
+    .login-box { width: 100%; max-width: 440px; }
 
     /* Brand */
-    .brand-lockup { text-align: center; margin-bottom: 44px; }
-    .brand-eyebrow {
-        font-size: 10px; font-weight: 600; letter-spacing: 4px;
-        color: rgba(245,200,66,0.7); text-transform: uppercase;
-        margin-bottom: 12px;
-    }
-    .brand-name {
-        font-family: 'Playfair Display', serif;
-        font-size: 52px; font-weight: 700;
-        color: #ffffff; line-height: 1;
-        margin-bottom: 4px;
-        letter-spacing: -1px;
-    }
+    .brand { text-align: center; margin-bottom: 36px; }
+    .brand-pre { font-size: 10px; font-weight: 600; letter-spacing: 4px; color: rgba(245,200,66,0.6); text-transform: uppercase; margin-bottom: 10px; }
+    .brand-name { font-family: 'Playfair Display', serif; font-size: 54px; font-weight: 700; color: #fff; line-height: 1; letter-spacing: -1px; margin-bottom: 10px; }
     .brand-name .fc { color: #f5c842; font-style: italic; }
-    .brand-tagline {
-        font-size: 12px; font-weight: 400;
-        color: rgba(255,255,255,0.45);
-        letter-spacing: 3px; text-transform: uppercase;
-        margin-top: 10px;
-    }
+    .brand-tag { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.5); letter-spacing: 4px; text-transform: uppercase; }
 
-    /* Form card */
-    .form-card {
-        background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 20px;
-        padding: 36px 32px 28px;
-        backdrop-filter: blur(20px);
-    }
-    .form-label {
-        font-size: 10px; font-weight: 600;
-        color: rgba(255,255,255,0.35);
-        letter-spacing: 2px; text-transform: uppercase;
-        margin-bottom: 6px; display: block;
-    }
+    /* Card */
+    .login-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 36px 32px 28px; backdrop-filter: blur(12px); }
 
-    /* Streamlit input overrides */
-    .stTextInput { margin-bottom: 4px !important; }
+    /* Tabs */
+    .tab-row { display: flex; gap: 4px; background: rgba(255,255,255,0.04); border-radius: 10px; padding: 4px; margin-bottom: 28px; }
+    .tab-btn { flex: 1; text-align: center; padding: 8px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.4); cursor: pointer; border-radius: 7px; transition: all 0.2s; }
+    .tab-btn.active { background: rgba(255,255,255,0.1); color: #fff; }
+
+    /* Fields */
+    .field-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.4); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; margin-top: 16px; display: block; }
     .stTextInput label { display: none !important; }
     .stTextInput > div > div {
-        background: rgba(255,255,255,0.06) !important;
-        border: 1px solid rgba(255,255,255,0.12) !important;
-        border-radius: 12px !important;
-        transition: all 0.2s !important;
+        background: rgba(255,255,255,0.92) !important;
+        border: 1.5px solid rgba(255,255,255,0.15) !important;
+        border-radius: 10px !important;
     }
     .stTextInput > div > div:focus-within {
-        background: rgba(255,255,255,0.09) !important;
-        border-color: rgba(245,200,66,0.5) !important;
-        box-shadow: 0 0 0 3px rgba(245,200,66,0.08) !important;
+        background: #fff !important;
+        border-color: #f5c842 !important;
+        box-shadow: 0 0 0 3px rgba(245,200,66,0.15) !important;
     }
-    .stTextInput input {
-        color: #ffffff !important;
-        font-family: 'Outfit', sans-serif !important;
-        font-size: 15px !important;
-        font-weight: 400 !important;
-        padding: 14px 16px !important;
-    }
-    .stTextInput input::placeholder { color: rgba(255,255,255,0.2) !important; }
+    .stTextInput input { color: #0d1117 !important; font-family: 'Outfit', sans-serif !important; font-size: 14px !important; padding: 12px 14px !important; }
+    .stTextInput input::placeholder { color: #94a3b8 !important; }
+    .stTextArea label { display: none !important; }
+    .stTextArea textarea { color: #0d1117 !important; background: rgba(255,255,255,0.92) !important; border: 1.5px solid rgba(255,255,255,0.15) !important; border-radius: 10px !important; font-family: 'Outfit', sans-serif !important; font-size: 13px !important; }
+    .stSelectbox label { display: none !important; }
+    .stSelectbox > div > div { background: rgba(255,255,255,0.92) !important; border: 1.5px solid rgba(255,255,255,0.15) !important; border-radius: 10px !important; color: #0d1117 !important; }
 
-    /* Sign in button */
+    /* Primary button */
     .stButton > button {
         background: linear-gradient(135deg, #f5c842 0%, #e6a817 100%) !important;
-        color: #04080f !important;
-        border: none !important;
-        border-radius: 12px !important;
-        font-family: 'Outfit', sans-serif !important;
-        font-weight: 700 !important;
-        font-size: 14px !important;
-        letter-spacing: 0.5px !important;
-        padding: 14px 0 !important;
-        width: 100% !important;
+        color: #04080f !important; border: none !important;
+        border-radius: 10px !important; font-family: 'Outfit', sans-serif !important;
+        font-weight: 700 !important; font-size: 14px !important;
+        padding: 13px 0 !important; width: 100% !important;
         margin-top: 20px !important;
-        box-shadow: 0 8px 24px rgba(245,200,66,0.25) !important;
-        transition: all 0.2s !important;
+        box-shadow: 0 6px 20px rgba(245,200,66,0.25) !important;
+        transition: all 0.2s !important; letter-spacing: 0.3px !important;
     }
-    .stButton > button:hover {
-        box-shadow: 0 12px 32px rgba(245,200,66,0.35) !important;
-        transform: translateY(-1px) !important;
-    }
+    .stButton > button:hover { box-shadow: 0 8px 28px rgba(245,200,66,0.35) !important; transform: translateY(-1px) !important; }
 
     /* Error */
-    .error-pill {
-        background: rgba(239,68,68,0.1);
-        border: 1px solid rgba(239,68,68,0.25);
-        border-radius: 8px; padding: 10px 14px;
-        font-size: 12px; color: #fca5a5;
-        text-align: center; margin-bottom: 16px;
-    }
+    .err-pill { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #fca5a5; text-align: center; margin-bottom: 16px; }
+    .ok-pill { background: rgba(22,163,74,0.12); border: 1px solid rgba(22,163,74,0.3); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #86efac; text-align: center; margin-bottom: 16px; }
 
-    /* Footer note */
-    .login-footer {
-        text-align: center; margin-top: 24px;
-        font-size: 11px; color: rgba(255,255,255,0.2);
-    }
-    .login-footer a { color: rgba(245,200,66,0.5); text-decoration: none; }
+    /* Footer links */
+    .login-links { display: flex; justify-content: space-between; margin-top: 20px; }
+    .login-link { font-size: 11px; color: rgba(255,255,255,0.3); cursor: pointer; }
+    .login-link:hover { color: rgba(245,200,66,0.7); }
+    .login-link a { color: inherit; text-decoration: none; }
 
-    /* Stats strip */
-    .stats-strip {
-        display: flex; justify-content: center; gap: 32px;
-        margin-top: 40px; padding-top: 32px;
-        border-top: 1px solid rgba(255,255,255,0.06);
-    }
-    .stat-item { text-align: center; }
-    .stat-num { font-size: 22px; font-weight: 700; color: #f5c842; line-height: 1; }
-    .stat-label { font-size: 10px; color: rgba(255,255,255,0.3); letter-spacing: 1px; margin-top: 4px; }
+    /* Stats bar */
+    .stats-bar { display: flex; justify-content: center; gap: 40px; margin-top: 32px; padding-top: 28px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .stat { text-align: center; }
+    .stat-n { font-size: 20px; font-weight: 700; color: #f5c842; line-height: 1; }
+    .stat-l { font-size: 9px; color: rgba(255,255,255,0.25); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 4px; }
     </style>
-
     <div class="login-bg"></div>
-    <div class="login-outer">
-    <div class="login-container">
-        <div class="brand-lockup">
-            <div class="brand-eyebrow">Talent Intelligence Platform</div>
-            <div class="brand-name">Scout IQ·<span class="fc">FC</span></div>
-            <div class="brand-tagline">Where Talent Is Unearthed</div>
-        </div>
-    </div>
-    </div>
     """, unsafe_allow_html=True)
 
-    _, col, _ = st.columns([1, 1.3, 1])
+    _, col, _ = st.columns([1, 1.4, 1])
     with col:
-        st.markdown('<div style="margin-top:-320px;position:relative;z-index:2;">', unsafe_allow_html=True)
-        st.markdown('<div class="form-card">', unsafe_allow_html=True)
-        if st.session_state.get("auth_error"):
-            st.markdown('<div class="error-pill">Incorrect credentials — please try again</div>', unsafe_allow_html=True)
-        st.markdown('<span class="form-label">Username</span>', unsafe_allow_html=True)
-        st.text_input("u", key="login_user", placeholder="Enter your username", label_visibility="collapsed")
-        st.markdown('<span class="form-label" style="margin-top:12px;display:block;">Password</span>', unsafe_allow_html=True)
-        st.text_input("p", type="password", key="login_pass", placeholder="Enter your password", label_visibility="collapsed")
-        st.button("Sign In →", on_click=password_entered)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('<div style="position:relative;z-index:2;">', unsafe_allow_html=True)
+
+        # Brand
         st.markdown("""
-        <div class="login-footer">
-            New to Scout IQ·FC? <a href="mailto:hello@scoutiqfc.com">Request access</a>
-            &nbsp;·&nbsp; <a href="mailto:hello@scoutiqfc.com">Book a demo</a>
+        <div class="brand">
+            <div class="brand-pre">Talent Intelligence Platform</div>
+            <div class="brand-name">Scout IQ·<span class="fc">FC</span></div>
+            <div class="brand-tag">Where Talent Is Unearthed</div>
         </div>
-        <div class="stats-strip">
-            <div class="stat-item"><div class="stat-num">100+</div><div class="stat-label">Players Tracked</div></div>
-            <div class="stat-item"><div class="stat-num">AI</div><div class="stat-label">Powered Reports</div></div>
-            <div class="stat-item"><div class="stat-num">3</div><div class="stat-label">Academies</div></div>
+        """, unsafe_allow_html=True)
+
+        # Tabs
+        tab_mode = st.session_state.get("login_tab", "signin")
+
+        tab_col1, tab_col2, tab_col3 = st.columns(3)
+        with tab_col1:
+            if st.button("Sign In", key="tab_signin"):
+                st.session_state["login_tab"] = "signin"; st.rerun()
+        with tab_col2:
+            if st.button("Request Demo", key="tab_demo"):
+                st.session_state["login_tab"] = "demo"; st.rerun()
+        with tab_col3:
+            if st.button("Contact Us", key="tab_contact"):
+                st.session_state["login_tab"] = "contact"; st.rerun()
+
+        st.markdown('<div class="login-card">', unsafe_allow_html=True)
+
+        if tab_mode == "signin" or tab_mode is None:
+            if st.session_state.get("auth_error"):
+                st.markdown('<div class="err-pill">Incorrect username or password</div>', unsafe_allow_html=True)
+            if st.session_state.get("show_forgot"):
+                st.markdown('<div class="ok-pill">Password reset link sent to your registered email</div>', unsafe_allow_html=True)
+                st.session_state["show_forgot"] = False
+
+            st.markdown('<span class="field-label">Username</span>', unsafe_allow_html=True)
+            st.text_input("u", key="login_user", placeholder="Enter your username", label_visibility="collapsed")
+            st.markdown('<span class="field-label">Password</span>', unsafe_allow_html=True)
+            st.text_input("p", type="password", key="login_pass", placeholder="Enter your password", label_visibility="collapsed")
+            st.button("Sign In →", on_click=password_entered)
+
+            st.markdown("""
+            <div class="login-links">
+                <span class="login-link">New here? Request a demo →</span>
+                <span class="login-link" id="forgot-link">Forgot password?</span>
+            </div>
+            """, unsafe_allow_html=True)
+            fc1, fc2 = st.columns(2)
+            with fc2:
+                if st.button("Forgot password?", key="forgot_btn"):
+                    st.session_state["show_forgot"] = True; st.rerun()
+
+        elif tab_mode == "demo":
+            st.markdown('<div style="font-size:15px;font-weight:600;color:#fff;margin-bottom:4px;">Request a Demo</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:16px;">We will set you up with a personalised walkthrough</div>', unsafe_allow_html=True)
+            st.markdown('<span class="field-label">Full Name</span>', unsafe_allow_html=True)
+            d_name = st.text_input("dn", placeholder="Your full name", label_visibility="collapsed", key="demo_name")
+            st.markdown('<span class="field-label">Email Address</span>', unsafe_allow_html=True)
+            d_email = st.text_input("de", placeholder="your@email.com", label_visibility="collapsed", key="demo_email")
+            st.markdown('<span class="field-label">Academy / Club</span>', unsafe_allow_html=True)
+            d_club = st.text_input("dc", placeholder="Club or academy name", label_visibility="collapsed", key="demo_club")
+            st.markdown('<span class="field-label">Role</span>', unsafe_allow_html=True)
+            d_role = st.selectbox("dr", ["Head Coach", "Academy Director", "Technical Director", "Scout", "Club Owner", "Other"], label_visibility="collapsed", key="demo_role")
+            if st.button("Request Demo →", key="submit_demo"):
+                if d_name and d_email:
+                    st.session_state["login_tab"] = "demo_sent"
+                    st.rerun()
+                else:
+                    st.markdown('<div class="err-pill">Please fill in your name and email</div>', unsafe_allow_html=True)
+
+        elif tab_mode == "demo_sent":
+            st.markdown("""
+            <div style="text-align:center;padding:20px 0;">
+                <div style="font-size:40px;margin-bottom:12px;">✅</div>
+                <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:8px;">Request Received</div>
+                <div style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.7;">
+                    Thank you. Our team will be in touch within 24 hours to schedule your personalised demo of Scout IQ·FC.
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            if st.button("Back to Sign In", key="back_signin"):
+                st.session_state["login_tab"] = "signin"; st.rerun()
+
+        elif tab_mode == "contact":
+            st.markdown('<div style="font-size:15px;font-weight:600;color:#fff;margin-bottom:4px;">Get in Touch</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:16px;">Questions, partnerships or press enquiries</div>', unsafe_allow_html=True)
+            st.markdown('<span class="field-label">Name</span>', unsafe_allow_html=True)
+            c_name = st.text_input("cn", placeholder="Your name", label_visibility="collapsed", key="cont_name")
+            st.markdown('<span class="field-label">Email</span>', unsafe_allow_html=True)
+            c_email = st.text_input("ce", placeholder="your@email.com", label_visibility="collapsed", key="cont_email")
+            st.markdown('<span class="field-label">Reason for Enquiry</span>', unsafe_allow_html=True)
+            c_reason = st.selectbox("cr", ["General Enquiry", "Partnership Opportunity", "Press / Media", "Technical Support", "Pricing"], label_visibility="collapsed", key="cont_reason")
+            st.markdown('<span class="field-label">Message</span>', unsafe_allow_html=True)
+            c_msg = st.text_area("cm", placeholder="Tell us how we can help...", label_visibility="collapsed", key="cont_msg", height=100)
+            if st.button("Send Message →", key="submit_contact"):
+                if c_name and c_email and c_msg:
+                    st.session_state["login_tab"] = "contact_sent"
+                    st.rerun()
+                else:
+                    st.markdown('<div class="err-pill">Please fill in all fields</div>', unsafe_allow_html=True)
+
+        elif tab_mode == "contact_sent":
+            st.markdown("""
+            <div style="text-align:center;padding:20px 0;">
+                <div style="font-size:40px;margin-bottom:12px;">📩</div>
+                <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:8px;">Message Sent</div>
+                <div style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.7;">
+                    Thanks for reaching out. We'll get back to you within 24 hours.
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            if st.button("Back to Sign In", key="back_signin2"):
+                st.session_state["login_tab"] = "signin"; st.rerun()
+
+        st.markdown('</div>', unsafe_allow_html=True)  # close login-card
+
+        # Stats
+        st.markdown("""
+        <div class="stats-bar">
+            <div class="stat"><div class="stat-n">100+</div><div class="stat-l">Players Tracked</div></div>
+            <div class="stat"><div class="stat-n">AI</div><div class="stat-l">Powered Reports</div></div>
+            <div class="stat"><div class="stat-n">3+</div><div class="stat-l">Academies</div></div>
+            <div class="stat"><div class="stat-n">Beta</div><div class="stat-l">Live Now</div></div>
         </div>
         """, unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
+
+    return False
+
     return False
 
 if not check_password():
