@@ -199,8 +199,8 @@ padding:9px 14px;font-size:12px;color:#86efac;text-align:center;margin-bottom:12
             st.markdown('<div class="spill">Password reset instructions sent to your email</div>', unsafe_allow_html=True)
             st.session_state["show_forgot"] = False
 
-        # Title
-        st.markdown('<div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:16px;letter-spacing:-0.2px;">Sign in to Scout IQ·FC</div>', unsafe_allow_html=True)
+        # Title - same style as field labels but slightly larger
+        st.markdown('<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.38);letter-spacing:3px;text-transform:uppercase;margin-bottom:16px;">Sign in to Scout IQ·FC</div>', unsafe_allow_html=True)
 
         # Username
         st.markdown('<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.38);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Username</div>', unsafe_allow_html=True)
@@ -210,28 +210,27 @@ padding:9px 14px;font-size:12px;color:#86efac;text-align:center;margin-bottom:12
         st.markdown('<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.38);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;margin-top:12px;">Password</div>', unsafe_allow_html=True)
         st.text_input("p", type="password", key="login_pass", placeholder="Enter your password", label_visibility="collapsed")
 
-        # Sign in button
+        # Sign in button - full width gold
         st.markdown('<div class="btn-gold">', unsafe_allow_html=True)
         st.button("Sign In →", on_click=password_entered)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Forgot password - tiny ghost link
-        st.markdown('<div class="btn-ghost">', unsafe_allow_html=True)
-        if st.button("Forgot password?", key="forgot"):
-            st.session_state["show_forgot"] = True; st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-
         # Divider
-        st.markdown('<div style="border-top:1px solid rgba(255,255,255,0.07);margin:16px 0 14px;"></div>', unsafe_allow_html=True)
+        st.markdown('<div style="border-top:1px solid rgba(255,255,255,0.07);margin:14px 0 12px;"></div>', unsafe_allow_html=True)
 
-        # Create Account + Request Demo - two equal pills
-        b1, b2 = st.columns(2)
+        # Three buttons in one row: Forgot Password | Create Account | Request Demo
+        b1, b2, b3 = st.columns(3)
         with b1:
+            st.markdown('<div class="btn-row">', unsafe_allow_html=True)
+            if st.button("Forgot password?", key="forgot"):
+                st.session_state["show_forgot"] = True; st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
+        with b2:
             st.markdown('<div class="btn-row">', unsafe_allow_html=True)
             if st.button("Create Account", key="nav_create"):
                 st.session_state["login_tab"] = "create"; st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
-        with b2:
+        with b3:
             st.markdown('<div class="btn-row">', unsafe_allow_html=True)
             if st.button("Request Demo", key="nav_demo"):
                 st.session_state["login_tab"] = "demo"; st.rerun()
