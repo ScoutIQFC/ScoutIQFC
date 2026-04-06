@@ -285,7 +285,7 @@ def get_api_key():
 
 def ai_report(prompt):
     claude = anthropic.Anthropic(api_key=get_api_key())
-    r = claude.messages.create(model="claude-opus-4-5", max_tokens=4000,
+    r = claude.messages.create(model="claude-opus-4-5", max_tokens=5000,
         messages=[{"role": "user", "content": prompt}])
     return r.content[0].text
 
@@ -528,12 +528,12 @@ Short term (4 weeks): flag any physical output patterns that indicate fatigue or
 Short term: how to deliver feedback to this specific player based on their attitude and coachability scores. This season: how to manage their minutes and challenge level to maintain development without burnout. Long term: one honest assessment of whether this player has the psychological profile for the next level, and what evidence supports that view.
 
 11. SESSION DESIGN IDEAS
-Two training sessions tailored to this player's specific development needs. For each: give the session a name, describe the setup in two sentences, state the exact metric it addresses, and explain why this format is appropriate for this player's profile. These must be practical enough to run at a standard academy training facility.
+Two sessions only. For each: one sentence naming and describing the setup, one sentence on the metric it targets, one sentence on why it suits this player. Keep each session to 3 sentences maximum.
 
 12. SCOUT VERDICT
-State your recommendation in one of four categories: Continue Monitoring, Increase Development Investment, Priority Development Case, or Recommend for Promotion. Follow with three sentences, each referencing a specific number from this report. Close with one sentence — the kind a scout would say out loud to a colleague — that captures this player in plain language.
+One sentence stating recommendation category. Two sentences with specific numbers justifying it. One final sentence describing this player as a scout would verbally to a colleague.
 
-Write every section completely. No section can be shortened or skipped. Reference specific numbers throughout. No filler. No hedging. No generic language."""
+IMPORTANT: You must complete all 12 sections. If you are running long, condense sections 9 and 10 to 2 sentences each. Do not cut off mid-section under any circumstances. Every section must have a closing sentence."""
 
 
 # ── DATA ──
