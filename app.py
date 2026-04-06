@@ -31,309 +31,197 @@ def check_password():
     if "show_forgot" not in st.session_state:
         st.session_state["show_forgot"] = False
 
+    # ── Full page CSS ──
     st.markdown("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,400&display=swap');
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body, [class*="css"] { background: #04080f !important; font-family: 'Outfit', sans-serif !important; }
-    .stApp { background: #04080f !important; min-height: 100vh; }
-    #MainMenu, footer, header { visibility: hidden; }
-    .block-container { padding: 0 !important; max-width: 100% !important; }
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,400&display=swap');
+html, body, [class*="css"], .stApp { background: #04080f !important; font-family: 'Outfit', sans-serif !important; }
+#MainMenu, footer, header { visibility: hidden !important; }
+.block-container { padding: 0 !important; max-width: 100% !important; }
+.stApp { min-height: 100vh; }
 
-    /* Background grid */
-    .login-bg {
-        position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 0;
-        background:
-            radial-gradient(ellipse 70% 50% at 15% 15%, rgba(26,58,138,0.45) 0%, transparent 55%),
-            radial-gradient(ellipse 50% 60% at 85% 85%, rgba(10,20,70,0.5) 0%, transparent 55%),
-            #04080f;
-    }
-    .login-bg::before {
-        content: ''; position: absolute; inset: 0;
-        background-image:
-            linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
-        background-size: 56px 56px;
-    }
+/* BG */
+.lbg { position:fixed;top:0;left:0;right:0;bottom:0;z-index:0;
+  background: radial-gradient(ellipse 80% 60% at 10% 10%, rgba(20,45,120,0.55) 0%, transparent 60%),
+              radial-gradient(ellipse 60% 70% at 90% 90%, rgba(8,16,60,0.6) 0%, transparent 60%), #04080f; }
+.lbg::before { content:'';position:absolute;inset:0;
+  background-image: linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+  background-size: 58px 58px; }
 
-    /* Brand */
-    .brand { text-align: center; margin-bottom: 32px; padding-top: 48px; }
-    .brand-pre { font-size: 10px; font-weight: 600; letter-spacing: 4px; color: rgba(245,200,66,0.65); text-transform: uppercase; margin-bottom: 10px; }
-    .brand-name { font-family: 'Playfair Display', serif; font-size: 52px; font-weight: 700; color: #fff; line-height: 1; letter-spacing: -1px; margin-bottom: 10px; }
-    .brand-name .fc { color: #f5c842; font-style: italic; }
-    .brand-tag { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.45); letter-spacing: 4px; text-transform: uppercase; }
+/* Outer wrap */
+.lwrap { position:relative;z-index:1;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px; }
+.lbox { width:100%;max-width:420px; }
 
-    /* Nav buttons - small pill style like image 3 */
-    .nav-row { display: flex; justify-content: center; gap: 8px; margin-bottom: 28px; }
-    .nav-pill {
-        background: rgba(255,255,255,0.08);
-        border: 1px solid rgba(255,255,255,0.12);
-        border-radius: 100px; padding: 8px 20px;
-        font-size: 12px; font-weight: 600;
-        color: rgba(255,255,255,0.6);
-        cursor: pointer; transition: all 0.2s;
-        white-space: nowrap;
-    }
-    .nav-pill:hover { background: rgba(255,255,255,0.12); color: #fff; }
-    .nav-pill.active { background: #f5c842; color: #04080f; border-color: #f5c842; }
+/* Brand */
+.lbrand { text-align:center;margin-bottom:36px; }
+.lbrand-pre { font-size:10px;font-weight:600;letter-spacing:4px;color:rgba(245,200,66,0.6);text-transform:uppercase;margin-bottom:10px; }
+.lbrand-name { font-family:'Playfair Display',serif;font-size:52px;font-weight:700;color:#fff;line-height:1;letter-spacing:-1px;margin-bottom:8px; }
+.lbrand-fc { color:#f5c842;font-style:italic; }
+.lbrand-tag { font-size:11px;font-weight:500;color:rgba(255,255,255,0.4);letter-spacing:4px;text-transform:uppercase; }
 
-    /* Override streamlit buttons for nav — pill style */
-    .nav-btn .stButton > button {
-        background: rgba(255,255,255,0.08) !important;
-        color: rgba(255,255,255,0.65) !important;
-        border: 1px solid rgba(255,255,255,0.12) !important;
-        border-radius: 100px !important;
-        font-family: 'Outfit', sans-serif !important;
-        font-size: 12px !important; font-weight: 600 !important;
-        padding: 7px 20px !important;
-        width: auto !important; margin-top: 0 !important;
-        box-shadow: none !important;
-        letter-spacing: 0.3px !important;
-        transition: all 0.2s !important;
-    }
-    .nav-btn .stButton > button:hover {
-        background: rgba(255,255,255,0.14) !important;
-        color: #fff !important; transform: none !important;
-        box-shadow: none !important;
-    }
-    .nav-btn-active .stButton > button {
-        background: #f5c842 !important;
-        color: #04080f !important;
-        border-color: #f5c842 !important;
-    }
+/* Card */
+.lcard { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:20px;padding:32px 30px 28px;backdrop-filter:blur(16px); }
+.lcard-title { font-size:18px;font-weight:700;color:#fff;margin-bottom:4px; }
+.lcard-sub { font-size:12px;color:rgba(255,255,255,0.38);margin-bottom:20px;line-height:1.6; }
 
-    /* Card */
-    .login-card {
-        background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 20px; padding: 32px 28px 24px;
-        backdrop-filter: blur(12px);
-    }
-    .card-title { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 4px; }
-    .card-sub { font-size: 12px; color: rgba(255,255,255,0.38); margin-bottom: 20px; }
+/* Field labels */
+.flabel { font-size:10px;font-weight:700;color:rgba(255,255,255,0.38);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;margin-top:16px;display:block; }
 
-    /* Field labels */
-    .field-label {
-        font-size: 10px; font-weight: 700;
-        color: rgba(255,255,255,0.4);
-        letter-spacing: 2px; text-transform: uppercase;
-        margin-bottom: 6px; margin-top: 14px; display: block;
-    }
-    .stTextInput label, .stSelectbox label, .stTextArea label { display: none !important; }
+/* Override ALL streamlit inputs to white bg dark text */
+.stTextInput label, .stSelectbox label, .stTextArea label, [data-testid="stSidebar"] label { display:none !important; }
+.stTextInput > div > div { background:#fff !important; border:1.5px solid rgba(255,255,255,0.1) !important; border-radius:10px !important; }
+.stTextInput > div > div:focus-within { background:#fff !important; border-color:#f5c842 !important; box-shadow:0 0 0 3px rgba(245,200,66,0.1) !important; }
+.stTextInput input { color:#0d1117 !important; font-family:'Outfit',sans-serif !important; font-size:14px !important; padding:12px 14px !important; }
+.stTextInput input::placeholder { color:#94a3b8 !important; }
+.stTextArea textarea { color:#0d1117 !important; background:#fff !important; border:1.5px solid rgba(255,255,255,0.1) !important; border-radius:10px !important; font-size:13px !important; }
+.stSelectbox > div > div { background:#fff !important; border:1.5px solid rgba(255,255,255,0.1) !important; border-radius:10px !important; color:#0d1117 !important; }
 
-    /* White inputs — dark text */
-    .stTextInput > div > div {
-        background: rgba(255,255,255,0.93) !important;
-        border: 1.5px solid rgba(255,255,255,0.12) !important;
-        border-radius: 10px !important;
-    }
-    .stTextInput > div > div:focus-within {
-        background: #fff !important;
-        border-color: #f5c842 !important;
-        box-shadow: 0 0 0 3px rgba(245,200,66,0.12) !important;
-    }
-    .stTextInput input {
-        color: #0d1117 !important;
-        font-family: 'Outfit', sans-serif !important;
-        font-size: 14px !important; padding: 12px 14px !important;
-    }
-    .stTextInput input::placeholder { color: #94a3b8 !important; }
-    .stTextArea textarea {
-        color: #0d1117 !important;
-        background: rgba(255,255,255,0.93) !important;
-        border: 1.5px solid rgba(255,255,255,0.12) !important;
-        border-radius: 10px !important;
-        font-family: 'Outfit', sans-serif !important; font-size: 13px !important;
-    }
-    .stSelectbox > div > div {
-        background: rgba(255,255,255,0.93) !important;
-        border: 1.5px solid rgba(255,255,255,0.12) !important;
-        border-radius: 10px !important; color: #0d1117 !important;
-    }
+/* ALL buttons: pill style, readable */
+.stButton > button { background:rgba(255,255,255,0.07) !important; color:rgba(255,255,255,0.75) !important; border:1px solid rgba(255,255,255,0.12) !important; border-radius:100px !important; font-family:'Outfit',sans-serif !important; font-size:13px !important; font-weight:600 !important; padding:10px 20px !important; width:100% !important; margin-top:0 !important; box-shadow:none !important; letter-spacing:0.2px !important; transition:all 0.15s !important; }
+.stButton > button:hover { background:rgba(255,255,255,0.12) !important; color:#fff !important; transform:none !important; box-shadow:none !important; }
+.stButton > button:focus, .stButton > button:active { box-shadow:none !important; outline:none !important; }
 
-    /* Primary CTA — pill style like image 3 but gold */
-    .cta-btn .stButton > button {
-        background: #f5c842 !important;
-        color: #04080f !important; border: none !important;
-        border-radius: 100px !important;
-        font-family: 'Outfit', sans-serif !important;
-        font-weight: 700 !important; font-size: 13px !important;
-        padding: 12px 0 !important; width: 100% !important;
-        margin-top: 20px !important;
-        box-shadow: 0 4px 16px rgba(245,200,66,0.2) !important;
-        letter-spacing: 0.3px !important;
-    }
-    .cta-btn .stButton > button:hover {
-        box-shadow: 0 6px 24px rgba(245,200,66,0.3) !important;
-        transform: translateY(-1px) !important;
-    }
+/* Primary gold CTA */
+.btn-primary .stButton > button { background:linear-gradient(135deg,#f5c842,#e6a817) !important; color:#04080f !important; border:none !important; font-weight:700 !important; font-size:14px !important; padding:13px 0 !important; margin-top:20px !important; box-shadow:0 4px 20px rgba(245,200,66,0.2) !important; }
+.btn-primary .stButton > button:hover { box-shadow:0 6px 28px rgba(245,200,66,0.3) !important; }
 
-    /* Secondary pill — ghost */
-    .ghost-btn .stButton > button {
-        background: rgba(255,255,255,0.06) !important;
-        color: rgba(255,255,255,0.55) !important;
-        border: 1px solid rgba(255,255,255,0.12) !important;
-        border-radius: 100px !important;
-        font-family: 'Outfit', sans-serif !important;
-        font-weight: 600 !important; font-size: 12px !important;
-        padding: 9px 0 !important; width: 100% !important;
-        margin-top: 10px !important; box-shadow: none !important;
-        letter-spacing: 0.3px !important;
-    }
-    .ghost-btn .stButton > button:hover {
-        background: rgba(255,255,255,0.1) !important;
-        color: #fff !important; transform: none !important;
-    }
+/* Ghost secondary */
+.btn-ghost .stButton > button { background:rgba(255,255,255,0.04) !important; color:rgba(255,255,255,0.45) !important; border:1px solid rgba(255,255,255,0.08) !important; font-size:12px !important; padding:9px 0 !important; margin-top:8px !important; }
 
-    /* Notifications */
-    .err-pill { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #fca5a5; text-align: center; margin-bottom: 14px; }
-    .ok-pill { background: rgba(22,163,74,0.1); border: 1px solid rgba(22,163,74,0.25); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #86efac; text-align: center; margin-bottom: 14px; }
+/* Error / success pills */
+.epill { background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:8px;padding:10px 14px;font-size:12px;color:#fca5a5;text-align:center;margin-bottom:14px; }
+.spill { background:rgba(22,163,74,0.1);border:1px solid rgba(22,163,74,0.25);border-radius:8px;padding:10px 14px;font-size:12px;color:#86efac;text-align:center;margin-bottom:14px; }
 
-    /* Forgot/links */
-    .subtle-link { font-size: 11px; color: rgba(255,255,255,0.28); text-align: right; margin-top: 8px; cursor: pointer; }
-    .subtle-link:hover { color: rgba(245,200,66,0.6); }
-
-    /* Divider */
-    .divider { border: none; border-top: 1px solid rgba(255,255,255,0.07); margin: 20px 0 16px; }
-
-    /* Stats */
-    .stats-bar { display: flex; justify-content: center; gap: 36px; margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.05); }
-    .stat { text-align: center; }
-    .stat-n { font-size: 18px; font-weight: 700; color: #f5c842; line-height: 1; }
-    .stat-l { font-size: 9px; color: rgba(255,255,255,0.22); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 3px; }
-    </style>
-    <div class="login-bg"></div>
+/* Stats */
+.lstats { display:flex;justify-content:center;gap:36px;margin-top:28px;padding-top:24px;border-top:1px solid rgba(255,255,255,0.05); }
+.lstat { text-align:center; }
+.lstat-n { font-size:18px;font-weight:700;color:#f5c842;line-height:1; }
+.lstat-l { font-size:9px;color:rgba(255,255,255,0.22);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px; }
+.ldivider { border:none;border-top:1px solid rgba(255,255,255,0.07);margin:16px 0; }
+</style>
+<div class="lbg"></div>
     """, unsafe_allow_html=True)
 
-    tab_mode = st.session_state.get("login_tab", "signin")
+    tab = st.session_state.get("login_tab", "signin")
 
-    # Full page forms for demo/contact
-    if tab_mode == "demo":
-        _, col, _ = st.columns([1, 1.4, 1])
+    # ── REQUEST DEMO PAGE ──
+    if tab == "demo":
+        _, col, _ = st.columns([1, 1.5, 1])
         with col:
             st.markdown('<div style="position:relative;z-index:2;padding-top:60px;">', unsafe_allow_html=True)
-            st.markdown('<div class="brand"><div class="brand-pre">Talent Intelligence Platform</div><div class="brand-name">Scout IQ·<span class="fc">FC</span></div></div>', unsafe_allow_html=True)
-            st.markdown('<div class="login-card"><div class="card-title">Request a Demo</div><div class="card-sub">Get a personalised walkthrough from our team within 24 hours</div>', unsafe_allow_html=True)
-            if st.session_state.get("auth_error"): st.session_state["auth_error"] = False
-            st.markdown('<span class="field-label">Full Name</span>', unsafe_allow_html=True)
+            st.markdown('<div class="lbrand"><div class="lbrand-pre">Scout IQ·FC</div></div>', unsafe_allow_html=True)
+            st.markdown('<div class="lcard"><div class="lcard-title">Request a Demo</div><div class="lcard-sub">Get a personalised walkthrough from our team within 24 hours</div>', unsafe_allow_html=True)
+            st.markdown('<span class="flabel">Full Name</span>', unsafe_allow_html=True)
             d_name = st.text_input("dn", placeholder="Your full name", label_visibility="collapsed", key="demo_name")
-            st.markdown('<span class="field-label">Email Address</span>', unsafe_allow_html=True)
+            st.markdown('<span class="flabel">Email Address</span>', unsafe_allow_html=True)
             d_email = st.text_input("de", placeholder="your@email.com", label_visibility="collapsed", key="demo_email")
-            st.markdown('<span class="field-label">Academy / Club</span>', unsafe_allow_html=True)
+            st.markdown('<span class="flabel">Academy / Club</span>', unsafe_allow_html=True)
             d_club = st.text_input("dc", placeholder="Club or academy name", label_visibility="collapsed", key="demo_club")
-            st.markdown('<span class="field-label">Your Role</span>', unsafe_allow_html=True)
-            d_role = st.selectbox("dr", ["Head Coach", "Academy Director", "Technical Director", "Scout", "Club Owner", "Other"], label_visibility="collapsed", key="demo_role")
-            st.markdown('<span class="field-label">Message (optional)</span>', unsafe_allow_html=True)
+            st.markdown('<span class="flabel">Your Role</span>', unsafe_allow_html=True)
+            d_role = st.selectbox("dr", ["Head Coach","Academy Director","Technical Director","Scout","Club Owner","Other"], label_visibility="collapsed", key="demo_role")
+            st.markdown('<span class="flabel">Message (optional)</span>', unsafe_allow_html=True)
             d_msg = st.text_area("dm", placeholder="Anything you would like us to know...", label_visibility="collapsed", key="demo_msg", height=80)
-            st.markdown('<div class="cta-btn">', unsafe_allow_html=True)
+            st.markdown('<div class="btn-primary">', unsafe_allow_html=True)
             if st.button("Send Demo Request", key="submit_demo"):
                 if d_name and d_email:
-                    try:
-                        import smtplib
-                        from email.mime.text import MIMEText
-                        msg = MIMEText(f"Demo Request\n\nName: {d_name}\nEmail: {d_email}\nClub: {d_club}\nRole: {d_role}\nMessage: {d_msg}")
-                        msg['Subject'] = f"Scout IQ FC - Demo Request from {d_name}"
-                        msg['From'] = "scoutiqfc@gmail.com"
-                        msg['To'] = "scoutiqfc@gmail.com"
-                    except Exception:
-                        pass
                     st.session_state["login_tab"] = "demo_sent"; st.rerun()
                 else:
-                    st.markdown('<div class="err-pill">Please fill in your name and email</div>', unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-            st.markdown('<div class="ghost-btn">', unsafe_allow_html=True)
-            if st.button("Back to Sign In", key="back_from_demo"):
+                    st.markdown('<div class="epill">Please fill in your name and email</div>', unsafe_allow_html=True)
+            st.markdown('</div><div class="btn-ghost">', unsafe_allow_html=True)
+            if st.button("Back to Sign In", key="back_demo"):
                 st.session_state["login_tab"] = "signin"; st.rerun()
             st.markdown('</div></div></div>', unsafe_allow_html=True)
         return False
 
-    if tab_mode == "demo_sent":
-        _, col, _ = st.columns([1, 1.4, 1])
+    if tab == "demo_sent":
+        _, col, _ = st.columns([1, 1.5, 1])
         with col:
-            st.markdown('<div style="position:relative;z-index:2;padding-top:100px;">', unsafe_allow_html=True)
-            st.markdown('<div class="login-card" style="text-align:center;padding:48px 32px;"><div style="font-size:48px;margin-bottom:16px;">✅</div><div class="card-title">Request Received</div><div class="card-sub" style="margin-top:8px;">Thank you. Our team will be in touch within 24 hours to schedule your personalised demo.</div>', unsafe_allow_html=True)
-            st.markdown('<div class="ghost-btn" style="margin-top:24px;">', unsafe_allow_html=True)
-            if st.button("Back to Sign In", key="back_signin_d"):
-                st.session_state["login_tab"] = "signin"; st.rerun()
-            st.markdown('</div></div></div>', unsafe_allow_html=True)
+            st.markdown('<div style="position:relative;z-index:2;padding-top:100px;"><div class="lcard" style="text-align:center;padding:48px 32px;"><div style="font-size:48px;margin-bottom:16px;">✅</div><div class="lcard-title">Request Received</div><div class="lcard-sub" style="margin-top:8px;margin-bottom:24px;">Our team will be in touch within 24 hours to schedule your demo.</div></div></div>', unsafe_allow_html=True)
+            _, col2, _ = st.columns([1,1.5,1])
+            with col2:
+                st.markdown('<div class="btn-ghost">', unsafe_allow_html=True)
+                if st.button("Back to Sign In", key="bk_ds"):
+                    st.session_state["login_tab"] = "signin"; st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
         return False
 
-    # Main sign in page
-    _, col, _ = st.columns([1, 1.4, 1])
+    if tab == "create":
+        _, col, _ = st.columns([1, 1.5, 1])
+        with col:
+            st.markdown('<div style="position:relative;z-index:2;padding-top:100px;"><div class="lcard" style="text-align:center;padding:48px 32px;"><div style="font-size:48px;margin-bottom:16px;">🚀</div><div class="lcard-title">Coming Soon</div><div class="lcard-sub" style="margin-top:8px;margin-bottom:24px;">Account creation is coming soon. Request a demo to get early access to Scout IQ·FC.</div></div></div>', unsafe_allow_html=True)
+            _, col2, _ = st.columns([1,1.5,1])
+            with col2:
+                st.markdown('<div class="btn-primary">', unsafe_allow_html=True)
+                if st.button("Request Demo", key="goto_demo_c"):
+                    st.session_state["login_tab"] = "demo"; st.rerun()
+                st.markdown('</div><div class="btn-ghost">', unsafe_allow_html=True)
+                if st.button("Back to Sign In", key="bk_cr"):
+                    st.session_state["login_tab"] = "signin"; st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
+        return False
+
+    # ── MAIN SIGN IN PAGE ──
+    _, col, _ = st.columns([1, 1.5, 1])
     with col:
         st.markdown('<div style="position:relative;z-index:2;">', unsafe_allow_html=True)
 
         # Brand
         st.markdown("""
-        <div class="brand">
-            <div class="brand-pre">Talent Intelligence Platform</div>
-            <div class="brand-name">Scout IQ·<span class="fc">FC</span></div>
-            <div class="brand-tag">Where Talent Is Unearthed</div>
+        <div class="lbrand">
+            <div class="lbrand-pre">Talent Intelligence Platform</div>
+            <div class="lbrand-name">Scout IQ·<span class="lbrand-fc">FC</span></div>
+            <div class="lbrand-tag">Where Talent Is Unearthed</div>
         </div>
         """, unsafe_allow_html=True)
 
-        # Nav pills
-        n1, n2, n3 = st.columns(3)
-        with n1:
-            st.markdown('<div class="nav-btn nav-btn-active">', unsafe_allow_html=True)
-            if st.button("Sign In", key="nav_signin"):
-                st.session_state["login_tab"] = "signin"; st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
-        with n2:
-            st.markdown('<div class="nav-btn">', unsafe_allow_html=True)
-            if st.button("Request Demo", key="nav_demo"):
-                st.session_state["login_tab"] = "demo"; st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
-        with n3:
-            st.markdown('<div class="nav-btn">', unsafe_allow_html=True)
-            if st.button("Create Account", key="nav_create"):
-                st.session_state["login_tab"] = "create"; st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
-
-        # Login card
-        st.markdown('<div class="login-card">', unsafe_allow_html=True)
+        # Login card — single clean block
+        st.markdown('<div class="lcard">', unsafe_allow_html=True)
+        st.markdown('<div class="lcard-title">Sign in to Scout IQ·FC</div>', unsafe_allow_html=True)
 
         if st.session_state.get("auth_error"):
-            st.markdown('<div class="err-pill">Incorrect username or password — please try again</div>', unsafe_allow_html=True)
+            st.markdown('<div class="epill">Incorrect username or password</div>', unsafe_allow_html=True)
         if st.session_state.get("show_forgot"):
-            st.markdown('<div class="ok-pill">Password reset instructions sent to your email</div>', unsafe_allow_html=True)
+            st.markdown('<div class="spill">Password reset instructions sent to your email</div>', unsafe_allow_html=True)
             st.session_state["show_forgot"] = False
 
-        st.markdown('<span class="field-label">Username</span>', unsafe_allow_html=True)
+        st.markdown('<span class="flabel">Username</span>', unsafe_allow_html=True)
         st.text_input("u", key="login_user", placeholder="Enter your username", label_visibility="collapsed")
-        st.markdown('<span class="field-label">Password</span>', unsafe_allow_html=True)
+        st.markdown('<span class="flabel">Password</span>', unsafe_allow_html=True)
         st.text_input("p", type="password", key="login_pass", placeholder="Enter your password", label_visibility="collapsed")
 
-        st.markdown('<div class="cta-btn">', unsafe_allow_html=True)
+        st.markdown('<div class="btn-primary">', unsafe_allow_html=True)
         st.button("Sign In →", on_click=password_entered)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Forgot password
-        fp1, fp2 = st.columns([3,2])
-        with fp2:
-            st.markdown('<div class="ghost-btn">', unsafe_allow_html=True)
-            if st.button("Forgot password?", key="forgot_btn"):
-                st.session_state["show_forgot"] = True; st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('<div class="btn-ghost">', unsafe_allow_html=True)
+        if st.button("Forgot password?", key="forgot"):
+            st.session_state["show_forgot"] = True; st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
-        st.markdown('</div>', unsafe_allow_html=True)  # close card
+        st.markdown('<hr class="ldivider">', unsafe_allow_html=True)
 
-        # Create account placeholder
-        if tab_mode == "create":
-            st.markdown('<div class="login-card" style="margin-top:12px;text-align:center;padding:24px;"><div style="font-size:13px;color:rgba(255,255,255,0.5);">Account creation coming soon. <br>Request a demo to get early access.</div></div>', unsafe_allow_html=True)
+        # Bottom action buttons
+        b1, b2 = st.columns(2)
+        with b1:
+            if st.button("Create Account", key="nav_create"):
+                st.session_state["login_tab"] = "create"; st.rerun()
+        with b2:
+            if st.button("Request Demo", key="nav_demo"):
+                st.session_state["login_tab"] = "demo"; st.rerun()
 
-        # Stats bar
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        # Stats
         st.markdown("""
-        <div class="stats-bar">
-            <div class="stat"><div class="stat-n">100+</div><div class="stat-l">Players</div></div>
-            <div class="stat"><div class="stat-n">AI</div><div class="stat-l">Reports</div></div>
-            <div class="stat"><div class="stat-n">3+</div><div class="stat-l">Academies</div></div>
-            <div class="stat"><div class="stat-n">Beta</div><div class="stat-l">Live</div></div>
+        <div class="lstats">
+            <div class="lstat"><div class="lstat-n">100+</div><div class="lstat-l">Players</div></div>
+            <div class="lstat"><div class="lstat-n">AI</div><div class="lstat-l">Reports</div></div>
+            <div class="lstat"><div class="lstat-n">3+</div><div class="lstat-l">Academies</div></div>
+            <div class="lstat"><div class="lstat-n">Beta</div><div class="lstat-l">Live</div></div>
         </div>
         """, unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
-
-    return False
 
     return False
 
@@ -1445,19 +1333,19 @@ if st.session_state.mode == "youth":
         with c1:
             fig=go.Figure()
             fig.add_trace(go.Scatter(x=dates,y=[s[5] for s in sess],mode='lines+markers',line=dict(color='#1a3a8a',width=2.5),marker=dict(size=7,color='#1a3a8a'),fill='tozeroy',fillcolor='rgba(26,58,138,0.06)'))
-            fig.update_layout(title=dict(text='Distance per Session',font=dict(size=13,color='#04080f',family='Outfit'),x=0),paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category',tickfont=dict(size=10)),yaxis=dict(gridcolor='#f3f4f6',title='km',titlefont=dict(size=10)),height=240,showlegend=False)
+            fig.update_layout(title=dict(text='Distance per Session',font=dict(size=13,color='#04080f'),x=0),paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category',tickfont=dict(size=10)),yaxis=dict(gridcolor='#f3f4f6',title='km',titlefont=dict(size=10)),height=240,showlegend=False)
             st.plotly_chart(fig,use_container_width=True)
         with c2:
             fig=go.Figure()
             fig.add_trace(go.Bar(x=dates,y=[s[6] for s in sess],marker_color='#3b82f6',opacity=0.8,marker_line_width=0))
-            fig.update_layout(title=dict(text='Sprint Count',font=dict(size=13,color='#04080f',family='Outfit'),x=0),paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category',tickfont=dict(size=10)),yaxis=dict(gridcolor='#f3f4f6'),height=240,showlegend=False)
+            fig.update_layout(title=dict(text='Sprint Count',font=dict(size=13,color='#04080f'),x=0),paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category',tickfont=dict(size=10)),yaxis=dict(gridcolor='#f3f4f6'),height=240,showlegend=False)
             st.plotly_chart(fig,use_container_width=True)
 
         c3,c4=st.columns(2)
         with c3:
             fig=go.Figure()
             fig.add_trace(go.Scatter(x=dates,y=[round(s[8]/s[9]*100) if s[9]>0 else 0 for s in sess],mode='lines+markers',line=dict(color='#16a34a',width=2.5),marker=dict(size=7,color='#16a34a'),fill='tozeroy',fillcolor='rgba(22,163,74,0.06)'))
-            fig.update_layout(title=dict(text='Pass Accuracy %',font=dict(size=13,color='#04080f',family='Outfit'),x=0),paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category',tickfont=dict(size=10)),yaxis=dict(gridcolor='#f3f4f6',title='%',range=[0,100]),height=240,showlegend=False)
+            fig.update_layout(title=dict(text='Pass Accuracy %',font=dict(size=13,color='#04080f'),x=0),paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category',tickfont=dict(size=10)),yaxis=dict(gridcolor='#f3f4f6',title='%',range=[0,100]),height=240,showlegend=False)
             st.plotly_chart(fig,use_container_width=True)
         with c4:
             cats=['Distance','Sprints','Passing','Attacking','Defending','Attitude']
@@ -1466,7 +1354,7 @@ if st.session_state.mode == "youth":
             norm=[min(round((v/m)*10,1),10) for v,m in zip(avgv,maxv)]
             fig=go.Figure()
             fig.add_trace(go.Scatterpolar(r=norm+[norm[0]],theta=cats+[cats[0]],fill='toself',fillcolor='rgba(26,58,138,0.1)',line=dict(color='#1a3a8a',width=2),marker=dict(size=5)))
-            fig.update_layout(title=dict(text='Performance Profile',font=dict(size=13,color='#04080f',family='Outfit'),x=0),polar=dict(radialaxis=dict(visible=True,range=[0,10],gridcolor='#e5e7ef',tickfont=dict(size=8)),angularaxis=dict(gridcolor='#e5e7ef',tickfont=dict(size=10)),bgcolor='white'),paper_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),height=240,showlegend=False)
+            fig.update_layout(title=dict(text='Performance Profile',font=dict(size=13,color='#04080f'),x=0),polar=dict(radialaxis=dict(visible=True,range=[0,10],gridcolor='#e5e7ef',tickfont=dict(size=8)),angularaxis=dict(gridcolor='#e5e7ef',tickfont=dict(size=10)),bgcolor='white'),paper_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),height=240,showlegend=False)
             st.plotly_chart(fig,use_container_width=True)
 
         st.markdown('<div class="section-title">Development Indicators</div>', unsafe_allow_html=True)
@@ -1474,7 +1362,7 @@ if st.session_state.mode == "youth":
         fig.add_trace(go.Scatter(x=dates,y=[s[16] for s in sess],name='Coachability',line=dict(color='#1a3a8a',width=2),mode='lines+markers',marker=dict(size=6)))
         fig.add_trace(go.Scatter(x=dates,y=[s[17] for s in sess],name='Attitude',line=dict(color='#f5c842',width=2,dash='dash'),mode='lines+markers',marker=dict(size=6)))
         fig.add_trace(go.Scatter(x=dates,y=[s[18] for s in sess],name='Consistency',line=dict(color='#16a34a',width=2,dash='dot'),mode='lines+markers',marker=dict(size=6)))
-        fig.update_layout(title=dict(text='Development Scores',font=dict(size=13,color='#04080f',family='Outfit'),x=0),paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category'),yaxis=dict(gridcolor='#f3f4f6',range=[0,10],title='Score /10'),legend=dict(orientation='h',yanchor='bottom',y=1.02,xanchor='right',x=1,font=dict(size=11)),height=260)
+        fig.update_layout(title=dict(text='Development Scores',font=dict(size=13,color='#04080f'),x=0),paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category'),yaxis=dict(gridcolor='#f3f4f6',range=[0,10],title='Score /10'),legend=dict(orientation='h',yanchor='bottom',y=1.02,xanchor='right',x=1,font=dict(size=11)),height=260)
         st.plotly_chart(fig,use_container_width=True)
 
     # Media
@@ -1616,13 +1504,13 @@ else:
                     fig=go.Figure()
                     fig.add_trace(go.Bar(x=gws,y=[sg(s,7) for s in eps],name='Goals',marker_color='#1a3a8a',opacity=0.85,marker_line_width=0))
                     fig.add_trace(go.Bar(x=gws,y=[sg(s,8) for s in eps],name='Assists',marker_color='#3b82f6',opacity=0.85,marker_line_width=0))
-                    fig.update_layout(title=dict(text='Goals and Assists',font=dict(size=13,color='#04080f',family='Outfit'),x=0),barmode='group',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category'),yaxis=dict(gridcolor='#f3f4f6'),legend=dict(orientation='h',yanchor='bottom',y=1.02,xanchor='right',x=1),height=240)
+                    fig.update_layout(title=dict(text='Goals and Assists',font=dict(size=13,color='#04080f'),x=0),barmode='group',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category'),yaxis=dict(gridcolor='#f3f4f6'),legend=dict(orientation='h',yanchor='bottom',y=1.02,xanchor='right',x=1),height=240)
                     st.plotly_chart(fig,use_container_width=True)
                 with cc2:
                     fig=go.Figure()
                     fig.add_trace(go.Scatter(x=gws,y=[round(float(sg(s,11,0)),2) for s in eps],name='xG',line=dict(color='#f5c842',width=2.5),mode='lines+markers',marker=dict(size=7)))
                     fig.add_trace(go.Scatter(x=gws,y=[sg(s,7) for s in eps],name='Goals',line=dict(color='#1a3a8a',width=2,dash='dash'),mode='lines+markers',marker=dict(size=7)))
-                    fig.update_layout(title=dict(text='xG vs Actual Goals',font=dict(size=13,color='#04080f',family='Outfit'),x=0),paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category'),yaxis=dict(gridcolor='#f3f4f6'),legend=dict(orientation='h',yanchor='bottom',y=1.02,xanchor='right',x=1),height=240)
+                    fig.update_layout(title=dict(text='xG vs Actual Goals',font=dict(size=13,color='#04080f'),x=0),paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category'),yaxis=dict(gridcolor='#f3f4f6'),legend=dict(orientation='h',yanchor='bottom',y=1.02,xanchor='right',x=1),height=240)
                     st.plotly_chart(fig,use_container_width=True)
 
             st.markdown('<div class="section-title">Performance Audit Report</div>', unsafe_allow_html=True)
@@ -1667,11 +1555,11 @@ Complete all sections. No truncation."""
                     with cc1:
                         fig=go.Figure()
                         fig.add_trace(go.Bar(x=top8['Player'],y=top8['Goals'],marker_color='#1a3a8a',opacity=0.85,marker_line_width=0))
-                        fig.update_layout(title=dict(text='Goals by Player',font=dict(size=13,color='#04080f',family='Outfit'),x=0),paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=80),xaxis=dict(showgrid=False,tickangle=45,tickfont=dict(size=10)),yaxis=dict(gridcolor='#f3f4f6'),height=300,showlegend=False)
+                        fig.update_layout(title=dict(text='Goals by Player',font=dict(size=13,color='#04080f'),x=0),paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=80),xaxis=dict(showgrid=False,tickangle=45,tickfont=dict(size=10)),yaxis=dict(gridcolor='#f3f4f6'),height=300,showlegend=False)
                         st.plotly_chart(fig,use_container_width=True)
                     with cc2:
                         fig=go.Figure()
                         fig.add_trace(go.Bar(x=top8['Player'],y=top8['xG'],name='xG',marker_color='#f5c842',opacity=0.85,marker_line_width=0))
                         fig.add_trace(go.Bar(x=top8['Player'],y=top8['Goals'],name='Goals',marker_color='#1a3a8a',opacity=0.7,marker_line_width=0))
-                        fig.update_layout(title=dict(text='xG vs Goals',font=dict(size=13,color='#04080f',family='Outfit'),x=0),barmode='group',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=80),xaxis=dict(showgrid=False,tickangle=45,tickfont=dict(size=10)),yaxis=dict(gridcolor='#f3f4f6'),height=300,legend=dict(orientation='h',yanchor='bottom',y=1.02,xanchor='right',x=1))
+                        fig.update_layout(title=dict(text='xG vs Goals',font=dict(size=13,color='#04080f'),x=0),barmode='group',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=80),xaxis=dict(showgrid=False,tickangle=45,tickfont=dict(size=10)),yaxis=dict(gridcolor='#f3f4f6'),height=300,legend=dict(orientation='h',yanchor='bottom',y=1.02,xanchor='right',x=1))
                         st.plotly_chart(fig,use_container_width=True)
