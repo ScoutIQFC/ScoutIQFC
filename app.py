@@ -11,15 +11,22 @@ load_dotenv()
 # ── LOGIN ──
 def check_password():
     def password_entered():
+        user = st.session_state.get("login_user", "")
+        pw = st.session_state.get("login_pass", "")
         try:
-            correct_user = st.secrets["USERNAME"]
-            correct_pass = st.secrets["PASSWORD"]
+            admin_user = st.secrets["USERNAME"]
+            admin_pass = st.secrets["PASSWORD"]
         except Exception:
-            correct_user = "admin"
-            correct_pass = "scoutiq2024"
-        if (st.session_state.get("login_user") == correct_user and
-                st.session_state.get("login_pass") == correct_pass):
+            admin_user = "admin"
+            admin_pass = "scoutiq2024"
+        # Admin account - full access
+        if user == admin_user and pw == admin_pass:
             st.session_state["authenticated"] = True
+            st.session_state["account_type"] = "admin"
+        # Beta account - limited access
+        elif user == "admin1" and pw == "scout2024beta":
+            st.session_state["authenticated"] = True
+            st.session_state["account_type"] = "beta"
         else:
             st.session_state["auth_error"] = True
 
@@ -31,188 +38,206 @@ def check_password():
     if "show_forgot" not in st.session_state:
         st.session_state["show_forgot"] = False
 
-    # ── Full page CSS ──
     st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,400&display=swap');
-html, body, [class*="css"], .stApp { background: #04080f !important; font-family: 'Outfit', sans-serif !important; }
-#MainMenu, footer, header { visibility: hidden !important; }
-.block-container { padding: 0 !important; max-width: 100% !important; }
-.stApp { min-height: 100vh; }
+html,body,[class*="css"],.stApp{background:#04080f !important;font-family:'Outfit',sans-serif !important;}
+#MainMenu,footer,header{visibility:hidden !important;}
+.block-container{padding:0 !important;max-width:100% !important;}
+.stApp{min-height:100vh;}
 
-/* BG */
-.lbg { position:fixed;top:0;left:0;right:0;bottom:0;z-index:0;
-  background: radial-gradient(ellipse 80% 60% at 10% 10%, rgba(20,45,120,0.55) 0%, transparent 60%),
-              radial-gradient(ellipse 60% 70% at 90% 90%, rgba(8,16,60,0.6) 0%, transparent 60%), #04080f; }
-.lbg::before { content:'';position:absolute;inset:0;
-  background-image: linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
-                    linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
-  background-size: 58px 58px; }
+/* Background */
+.lbg{position:fixed;top:0;left:0;right:0;bottom:0;z-index:0;
+background:radial-gradient(ellipse 80% 60% at 10% 10%,rgba(20,45,120,0.5) 0%,transparent 60%),
+radial-gradient(ellipse 60% 70% at 90% 90%,rgba(8,16,60,0.55) 0%,transparent 60%),#04080f;}
+.lbg::before{content:'';position:absolute;inset:0;
+background-image:linear-gradient(rgba(255,255,255,0.022) 1px,transparent 1px),
+linear-gradient(90deg,rgba(255,255,255,0.022) 1px,transparent 1px);
+background-size:58px 58px;}
 
-/* Outer wrap */
-.lwrap { position:relative;z-index:1;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px; }
-.lbox { width:100%;max-width:420px; }
+/* Inputs - WHITE bg, DARK text */
+.stTextInput label,.stSelectbox label,.stTextArea label{display:none !important;}
+.stTextInput > div > div{background:#ffffff !important;border:1.5px solid #e2e8f0 !important;border-radius:10px !important;}
+.stTextInput > div > div:focus-within{background:#ffffff !important;border-color:#f5c842 !important;box-shadow:0 0 0 3px rgba(245,200,66,0.15) !important;}
+.stTextInput input{color:#0d1117 !important;font-family:'Outfit',sans-serif !important;font-size:14px !important;padding:12px 14px !important;}
+.stTextInput input::placeholder{color:#94a3b8 !important;}
+.stTextArea textarea{color:#0d1117 !important;background:#ffffff !important;border:1.5px solid #e2e8f0 !important;border-radius:10px !important;font-size:13px !important;}
+.stSelectbox > div > div{background:#ffffff !important;border:1.5px solid #e2e8f0 !important;border-radius:10px !important;color:#0d1117 !important;}
 
-/* Brand */
-.lbrand { text-align:center;margin-bottom:36px; }
-.lbrand-pre { font-size:10px;font-weight:600;letter-spacing:4px;color:rgba(245,200,66,0.6);text-transform:uppercase;margin-bottom:10px; }
-.lbrand-name { font-family:'Playfair Display',serif;font-size:52px;font-weight:700;color:#fff;line-height:1;letter-spacing:-1px;margin-bottom:8px; }
-.lbrand-fc { color:#f5c842;font-style:italic; }
-.lbrand-tag { font-size:11px;font-weight:500;color:rgba(255,255,255,0.4);letter-spacing:4px;text-transform:uppercase; }
+/* ALL buttons default - pill shape, subtle */
+.stButton > button{background:rgba(255,255,255,0.08) !important;color:rgba(255,255,255,0.7) !important;
+border:1px solid rgba(255,255,255,0.13) !important;border-radius:100px !important;
+font-family:'Outfit',sans-serif !important;font-size:12px !important;font-weight:600 !important;
+padding:9px 16px !important;width:100% !important;margin-top:0 !important;
+box-shadow:none !important;letter-spacing:0.2px !important;}
+.stButton > button:hover{background:rgba(255,255,255,0.13) !important;color:#fff !important;transform:none !important;box-shadow:none !important;}
+.stButton > button:focus,.stButton > button:active{box-shadow:none !important;outline:none !important;}
 
-/* Card */
-.lcard { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:20px;padding:32px 30px 28px;backdrop-filter:blur(16px); }
-.lcard-title { font-size:18px;font-weight:700;color:#fff;margin-bottom:4px; }
-.lcard-sub { font-size:12px;color:rgba(255,255,255,0.38);margin-bottom:20px;line-height:1.6; }
+/* Gold primary CTA */
+.btn-gold .stButton > button{background:linear-gradient(135deg,#f5c842,#e6a817) !important;
+color:#04080f !important;border:none !important;font-weight:700 !important;
+font-size:14px !important;padding:13px 0 !important;margin-top:16px !important;
+box-shadow:0 4px 20px rgba(245,200,66,0.2) !important;}
+.btn-gold .stButton > button:hover{box-shadow:0 6px 28px rgba(245,200,66,0.3) !important;transform:translateY(-1px) !important;}
 
-/* Field labels */
-.flabel { font-size:10px;font-weight:700;color:rgba(255,255,255,0.38);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;margin-top:16px;display:block; }
+/* Ghost subtle */
+.btn-ghost .stButton > button{background:transparent !important;color:rgba(255,255,255,0.35) !important;
+border:1px solid rgba(255,255,255,0.08) !important;font-size:11px !important;padding:8px 0 !important;margin-top:6px !important;}
+.btn-ghost .stButton > button:hover{color:rgba(255,255,255,0.65) !important;background:rgba(255,255,255,0.04) !important;}
 
-/* Override ALL streamlit inputs to white bg dark text */
-.stTextInput label, .stSelectbox label, .stTextArea label, [data-testid="stSidebar"] label { display:none !important; }
-.stTextInput > div > div { background:#fff !important; border:1.5px solid rgba(255,255,255,0.1) !important; border-radius:10px !important; }
-.stTextInput > div > div:focus-within { background:#fff !important; border-color:#f5c842 !important; box-shadow:0 0 0 3px rgba(245,200,66,0.1) !important; }
-.stTextInput input { color:#0d1117 !important; font-family:'Outfit',sans-serif !important; font-size:14px !important; padding:12px 14px !important; }
-.stTextInput input::placeholder { color:#94a3b8 !important; }
-.stTextArea textarea { color:#0d1117 !important; background:#fff !important; border:1.5px solid rgba(255,255,255,0.1) !important; border-radius:10px !important; font-size:13px !important; }
-.stSelectbox > div > div { background:#fff !important; border:1.5px solid rgba(255,255,255,0.1) !important; border-radius:10px !important; color:#0d1117 !important; }
+/* Divider row buttons */
+.btn-row .stButton > button{font-size:12px !important;padding:9px 12px !important;margin-top:0 !important;}
 
-/* ALL buttons: pill style, readable */
-.stButton > button { background:rgba(255,255,255,0.07) !important; color:rgba(255,255,255,0.75) !important; border:1px solid rgba(255,255,255,0.12) !important; border-radius:100px !important; font-family:'Outfit',sans-serif !important; font-size:13px !important; font-weight:600 !important; padding:10px 20px !important; width:100% !important; margin-top:0 !important; box-shadow:none !important; letter-spacing:0.2px !important; transition:all 0.15s !important; }
-.stButton > button:hover { background:rgba(255,255,255,0.12) !important; color:#fff !important; transform:none !important; box-shadow:none !important; }
-.stButton > button:focus, .stButton > button:active { box-shadow:none !important; outline:none !important; }
-
-/* Primary gold CTA */
-.btn-primary .stButton > button { background:linear-gradient(135deg,#f5c842,#e6a817) !important; color:#04080f !important; border:none !important; font-weight:700 !important; font-size:14px !important; padding:13px 0 !important; margin-top:20px !important; box-shadow:0 4px 20px rgba(245,200,66,0.2) !important; }
-.btn-primary .stButton > button:hover { box-shadow:0 6px 28px rgba(245,200,66,0.3) !important; }
-
-/* Ghost secondary */
-.btn-ghost .stButton > button { background:rgba(255,255,255,0.04) !important; color:rgba(255,255,255,0.45) !important; border:1px solid rgba(255,255,255,0.08) !important; font-size:12px !important; padding:9px 0 !important; margin-top:8px !important; }
-
-/* Error / success pills */
-.epill { background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:8px;padding:10px 14px;font-size:12px;color:#fca5a5;text-align:center;margin-bottom:14px; }
-.spill { background:rgba(22,163,74,0.1);border:1px solid rgba(22,163,74,0.25);border-radius:8px;padding:10px 14px;font-size:12px;color:#86efac;text-align:center;margin-bottom:14px; }
+/* Error/success */
+.epill{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:8px;
+padding:9px 14px;font-size:12px;color:#fca5a5;text-align:center;margin-bottom:12px;}
+.spill{background:rgba(22,163,74,0.1);border:1px solid rgba(22,163,74,0.25);border-radius:8px;
+padding:9px 14px;font-size:12px;color:#86efac;text-align:center;margin-bottom:12px;}
 
 /* Stats */
-.lstats { display:flex;justify-content:center;gap:36px;margin-top:28px;padding-top:24px;border-top:1px solid rgba(255,255,255,0.05); }
-.lstat { text-align:center; }
-.lstat-n { font-size:18px;font-weight:700;color:#f5c842;line-height:1; }
-.lstat-l { font-size:9px;color:rgba(255,255,255,0.22);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px; }
-.ldivider { border:none;border-top:1px solid rgba(255,255,255,0.07);margin:16px 0; }
+.lstats{display:flex;justify-content:center;gap:32px;margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.05);}
+.lstat{text-align:center;}
+.lstat-n{font-size:17px;font-weight:700;color:#f5c842;line-height:1;}
+.lstat-l{font-size:9px;color:rgba(255,255,255,0.2);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;}
 </style>
 <div class="lbg"></div>
     """, unsafe_allow_html=True)
 
     tab = st.session_state.get("login_tab", "signin")
 
-    # ── REQUEST DEMO PAGE ──
-    if tab == "demo":
-        _, col, _ = st.columns([1, 1.5, 1])
+    # REQUEST DEMO PAGE
+    if tab in ("demo", "demo_sent"):
+        _, col, _ = st.columns([1, 1.4, 1])
         with col:
-            st.markdown('<div style="position:relative;z-index:2;padding-top:60px;">', unsafe_allow_html=True)
-            st.markdown('<div class="lbrand"><div class="lbrand-pre">Scout IQ·FC</div></div>', unsafe_allow_html=True)
-            st.markdown('<div class="lcard"><div class="lcard-title">Request a Demo</div><div class="lcard-sub">Get a personalised walkthrough from our team within 24 hours</div>', unsafe_allow_html=True)
-            st.markdown('<span class="flabel">Full Name</span>', unsafe_allow_html=True)
-            d_name = st.text_input("dn", placeholder="Your full name", label_visibility="collapsed", key="demo_name")
-            st.markdown('<span class="flabel">Email Address</span>', unsafe_allow_html=True)
-            d_email = st.text_input("de", placeholder="your@email.com", label_visibility="collapsed", key="demo_email")
-            st.markdown('<span class="flabel">Academy / Club</span>', unsafe_allow_html=True)
-            d_club = st.text_input("dc", placeholder="Club or academy name", label_visibility="collapsed", key="demo_club")
-            st.markdown('<span class="flabel">Your Role</span>', unsafe_allow_html=True)
-            d_role = st.selectbox("dr", ["Head Coach","Academy Director","Technical Director","Scout","Club Owner","Other"], label_visibility="collapsed", key="demo_role")
-            st.markdown('<span class="flabel">Message (optional)</span>', unsafe_allow_html=True)
-            d_msg = st.text_area("dm", placeholder="Anything you would like us to know...", label_visibility="collapsed", key="demo_msg", height=80)
-            st.markdown('<div class="btn-primary">', unsafe_allow_html=True)
-            if st.button("Send Demo Request", key="submit_demo"):
-                if d_name and d_email:
-                    st.session_state["login_tab"] = "demo_sent"; st.rerun()
-                else:
-                    st.markdown('<div class="epill">Please fill in your name and email</div>', unsafe_allow_html=True)
-            st.markdown('</div><div class="btn-ghost">', unsafe_allow_html=True)
-            if st.button("Back to Sign In", key="back_demo"):
-                st.session_state["login_tab"] = "signin"; st.rerun()
-            st.markdown('</div></div></div>', unsafe_allow_html=True)
-        return False
-
-    if tab == "demo_sent":
-        _, col, _ = st.columns([1, 1.5, 1])
-        with col:
-            st.markdown('<div style="position:relative;z-index:2;padding-top:100px;"><div class="lcard" style="text-align:center;padding:48px 32px;"><div style="font-size:48px;margin-bottom:16px;">✅</div><div class="lcard-title">Request Received</div><div class="lcard-sub" style="margin-top:8px;margin-bottom:24px;">Our team will be in touch within 24 hours to schedule your demo.</div></div></div>', unsafe_allow_html=True)
-            _, col2, _ = st.columns([1,1.5,1])
-            with col2:
+            st.markdown('<div style="position:relative;z-index:2;padding-top:48px;">', unsafe_allow_html=True)
+            if tab == "demo_sent":
+                st.markdown("""
+                <div style="text-align:center;padding:60px 0;">
+                    <div style="font-size:48px;margin-bottom:16px;">✅</div>
+                    <div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:8px;">Request Received</div>
+                    <div style="font-size:13px;color:rgba(255,255,255,0.4);line-height:1.7;margin-bottom:24px;">
+                        Our team will be in touch within 24 hours.
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
                 st.markdown('<div class="btn-ghost">', unsafe_allow_html=True)
                 if st.button("Back to Sign In", key="bk_ds"):
                     st.session_state["login_tab"] = "signin"; st.rerun()
                 st.markdown('</div>', unsafe_allow_html=True)
-        return False
-
-    if tab == "create":
-        _, col, _ = st.columns([1, 1.5, 1])
-        with col:
-            st.markdown('<div style="position:relative;z-index:2;padding-top:100px;"><div class="lcard" style="text-align:center;padding:48px 32px;"><div style="font-size:48px;margin-bottom:16px;">🚀</div><div class="lcard-title">Coming Soon</div><div class="lcard-sub" style="margin-top:8px;margin-bottom:24px;">Account creation is coming soon. Request a demo to get early access to Scout IQ·FC.</div></div></div>', unsafe_allow_html=True)
-            _, col2, _ = st.columns([1,1.5,1])
-            with col2:
-                st.markdown('<div class="btn-primary">', unsafe_allow_html=True)
-                if st.button("Request Demo", key="goto_demo_c"):
-                    st.session_state["login_tab"] = "demo"; st.rerun()
+            else:
+                st.markdown("""
+                <div style="text-align:center;margin-bottom:28px;">
+                    <div style="font-family:'Playfair Display',serif;font-size:36px;color:#fff;font-weight:700;letter-spacing:-0.5px;">
+                        Scout IQ·<span style="color:#f5c842;font-style:italic;">FC</span>
+                    </div>
+                    <div style="font-size:16px;font-weight:600;color:rgba(255,255,255,0.7);margin-top:12px;">Request a Demo</div>
+                    <div style="font-size:12px;color:rgba(255,255,255,0.35);margin-top:4px;">Get a personalised walkthrough within 24 hours</div>
+                </div>
+                """, unsafe_allow_html=True)
+                st.markdown('<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Full Name</div>', unsafe_allow_html=True)
+                d_name = st.text_input("dn", placeholder="Your full name", label_visibility="collapsed", key="demo_name")
+                st.markdown('<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;margin-top:12px;">Email Address</div>', unsafe_allow_html=True)
+                d_email = st.text_input("de", placeholder="your@email.com", label_visibility="collapsed", key="demo_email")
+                st.markdown('<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;margin-top:12px;">Academy / Club</div>', unsafe_allow_html=True)
+                d_club = st.text_input("dc", placeholder="Club or academy name", label_visibility="collapsed", key="demo_club")
+                st.markdown('<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;margin-top:12px;">Message</div>', unsafe_allow_html=True)
+                d_msg = st.text_area("dm", placeholder="Tell us how we can help...", label_visibility="collapsed", key="demo_msg", height=80)
+                st.markdown('<div class="btn-gold">', unsafe_allow_html=True)
+                if st.button("Send Request", key="submit_demo"):
+                    if d_name and d_email:
+                        st.session_state["login_tab"] = "demo_sent"; st.rerun()
+                    else:
+                        st.markdown('<div class="epill">Please fill in name and email</div>', unsafe_allow_html=True)
                 st.markdown('</div><div class="btn-ghost">', unsafe_allow_html=True)
-                if st.button("Back to Sign In", key="bk_cr"):
+                if st.button("Back to Sign In", key="bk_demo"):
                     st.session_state["login_tab"] = "signin"; st.rerun()
                 st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
         return False
 
-    # ── MAIN SIGN IN PAGE ──
-    _, col, _ = st.columns([1, 1.5, 1])
+    # CREATE ACCOUNT PAGE
+    if tab == "create":
+        _, col, _ = st.columns([1, 1.4, 1])
+        with col:
+            st.markdown('<div style="position:relative;z-index:2;padding-top:80px;text-align:center;">', unsafe_allow_html=True)
+            st.markdown("""
+            <div style="font-size:48px;margin-bottom:16px;">🚀</div>
+            <div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:8px;">Account Creation Coming Soon</div>
+            <div style="font-size:13px;color:rgba(255,255,255,0.4);line-height:1.7;margin-bottom:28px;">
+                Request a demo to get early access to Scout IQ·FC.
+            </div>
+            """, unsafe_allow_html=True)
+            st.markdown('<div class="btn-gold">', unsafe_allow_html=True)
+            if st.button("Request a Demo", key="goto_demo"):
+                st.session_state["login_tab"] = "demo"; st.rerun()
+            st.markdown('</div><div class="btn-ghost">', unsafe_allow_html=True)
+            if st.button("Back to Sign In", key="bk_cr"):
+                st.session_state["login_tab"] = "signin"; st.rerun()
+            st.markdown('</div></div>', unsafe_allow_html=True)
+        return False
+
+    # MAIN SIGN IN - everything on one screen, no scroll
+    _, col, _ = st.columns([1, 1.4, 1])
     with col:
         st.markdown('<div style="position:relative;z-index:2;">', unsafe_allow_html=True)
 
-        # Brand
+        # Brand — compact
         st.markdown("""
-        <div class="lbrand">
-            <div class="lbrand-pre">Talent Intelligence Platform</div>
-            <div class="lbrand-name">Scout IQ·<span class="lbrand-fc">FC</span></div>
-            <div class="lbrand-tag">Where Talent Is Unearthed</div>
+        <div style="text-align:center;padding-top:36px;margin-bottom:28px;">
+            <div style="font-size:10px;font-weight:600;letter-spacing:4px;color:rgba(245,200,66,0.6);text-transform:uppercase;margin-bottom:8px;">Talent Intelligence Platform</div>
+            <div style="font-family:'Playfair Display',serif;font-size:48px;font-weight:700;color:#fff;line-height:1;letter-spacing:-1px;margin-bottom:8px;">
+                Scout IQ·<span style="color:#f5c842;font-style:italic;">FC</span>
+            </div>
+            <div style="font-size:11px;font-weight:500;color:rgba(255,255,255,0.38);letter-spacing:4px;text-transform:uppercase;">Where Talent Is Unearthed</div>
         </div>
         """, unsafe_allow_html=True)
 
-        # Login card — single clean block
-        st.markdown('<div class="lcard">', unsafe_allow_html=True)
-        st.markdown('<div class="lcard-title">Sign in to Scout IQ·FC</div>', unsafe_allow_html=True)
-
+        # Login form - no card, just the fields
         if st.session_state.get("auth_error"):
             st.markdown('<div class="epill">Incorrect username or password</div>', unsafe_allow_html=True)
         if st.session_state.get("show_forgot"):
             st.markdown('<div class="spill">Password reset instructions sent to your email</div>', unsafe_allow_html=True)
             st.session_state["show_forgot"] = False
 
-        st.markdown('<span class="flabel">Username</span>', unsafe_allow_html=True)
+        # Title
+        st.markdown('<div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:16px;letter-spacing:-0.2px;">Sign in to Scout IQ·FC</div>', unsafe_allow_html=True)
+
+        # Username
+        st.markdown('<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.38);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Username</div>', unsafe_allow_html=True)
         st.text_input("u", key="login_user", placeholder="Enter your username", label_visibility="collapsed")
-        st.markdown('<span class="flabel">Password</span>', unsafe_allow_html=True)
+
+        # Password
+        st.markdown('<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.38);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;margin-top:12px;">Password</div>', unsafe_allow_html=True)
         st.text_input("p", type="password", key="login_pass", placeholder="Enter your password", label_visibility="collapsed")
 
-        st.markdown('<div class="btn-primary">', unsafe_allow_html=True)
+        # Sign in button
+        st.markdown('<div class="btn-gold">', unsafe_allow_html=True)
         st.button("Sign In →", on_click=password_entered)
         st.markdown('</div>', unsafe_allow_html=True)
 
+        # Forgot password - tiny ghost link
         st.markdown('<div class="btn-ghost">', unsafe_allow_html=True)
         if st.button("Forgot password?", key="forgot"):
             st.session_state["show_forgot"] = True; st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
-        st.markdown('<hr class="ldivider">', unsafe_allow_html=True)
+        # Divider
+        st.markdown('<div style="border-top:1px solid rgba(255,255,255,0.07);margin:16px 0 14px;"></div>', unsafe_allow_html=True)
 
-        # Bottom action buttons
+        # Create Account + Request Demo - two equal pills
         b1, b2 = st.columns(2)
         with b1:
+            st.markdown('<div class="btn-row">', unsafe_allow_html=True)
             if st.button("Create Account", key="nav_create"):
                 st.session_state["login_tab"] = "create"; st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
         with b2:
+            st.markdown('<div class="btn-row">', unsafe_allow_html=True)
             if st.button("Request Demo", key="nav_demo"):
                 st.session_state["login_tab"] = "demo"; st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
 
-        st.markdown('</div>', unsafe_allow_html=True)
-
-        # Stats
+        # Stats strip
         st.markdown("""
         <div class="lstats">
             <div class="lstat"><div class="lstat-n">100+</div><div class="lstat-l">Players</div></div>
@@ -221,6 +246,7 @@ html, body, [class*="css"], .stApp { background: #04080f !important; font-family
             <div class="lstat"><div class="lstat-n">Beta</div><div class="lstat-l">Live</div></div>
         </div>
         """, unsafe_allow_html=True)
+
         st.markdown('</div>', unsafe_allow_html=True)
 
     return False
@@ -973,7 +999,16 @@ Complete all 12 sections. No truncation. No filler."""
 
 # ── LOAD DATA ──
 cursor.execute("SELECT id,name,position,club,age_group,nationality,dominant_foot FROM players")
-players = cursor.fetchall()
+all_players = cursor.fetchall()
+
+# Beta accounts only see one demo academy
+account_type = st.session_state.get("account_type", "admin")
+BETA_ACADEMY = "Riverside FC Academy"
+if account_type == "beta":
+    players = [p for p in all_players if (p[3] or "Unassigned") == BETA_ACADEMY]
+else:
+    players = all_players
+
 clubs = {}
 for p in players:
     club = p[3] or "Unassigned"
@@ -1003,6 +1038,8 @@ with st.sidebar:
         <div class="sb-logo-tag">Where Talent Is Unearthed</div>
     </div>
     """, unsafe_allow_html=True)
+    if st.session_state.get("account_type") == "beta":
+        st.markdown('<div style="background:rgba(245,200,66,0.1);border:1px solid rgba(245,200,66,0.25);border-radius:6px;padding:6px 12px;margin:6px 16px;font-size:10px;color:rgba(245,200,66,0.8);text-align:center;font-weight:600;letter-spacing:1px;">BETA ACCESS</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="sb-section">Mode</div>', unsafe_allow_html=True)
     m1,m2 = st.columns(2)
@@ -1333,19 +1370,19 @@ if st.session_state.mode == "youth":
         with c1:
             fig=go.Figure()
             fig.add_trace(go.Scatter(x=dates,y=[s[5] for s in sess],mode='lines+markers',line=dict(color='#1a3a8a',width=2.5),marker=dict(size=7,color='#1a3a8a'),fill='tozeroy',fillcolor='rgba(26,58,138,0.06)'))
-            fig.update_layout(title=dict(text='Distance per Session',font=dict(size=13,color='#04080f'),x=0),paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category',tickfont=dict(size=10)),yaxis=dict(gridcolor='#f3f4f6',title='km',titlefont=dict(size=10)),height=240,showlegend=False)
+            fig.update_layout(title='Distance per Session',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category',tickfont=dict(size=10)),yaxis=dict(gridcolor='#f3f4f6',title='km',titlefont=dict(size=10)),height=240,showlegend=False)
             st.plotly_chart(fig,use_container_width=True)
         with c2:
             fig=go.Figure()
             fig.add_trace(go.Bar(x=dates,y=[s[6] for s in sess],marker_color='#3b82f6',opacity=0.8,marker_line_width=0))
-            fig.update_layout(title=dict(text='Sprint Count',font=dict(size=13,color='#04080f'),x=0),paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category',tickfont=dict(size=10)),yaxis=dict(gridcolor='#f3f4f6'),height=240,showlegend=False)
+            fig.update_layout(title='Sprint Count',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category',tickfont=dict(size=10)),yaxis=dict(gridcolor='#f3f4f6'),height=240,showlegend=False)
             st.plotly_chart(fig,use_container_width=True)
 
         c3,c4=st.columns(2)
         with c3:
             fig=go.Figure()
             fig.add_trace(go.Scatter(x=dates,y=[round(s[8]/s[9]*100) if s[9]>0 else 0 for s in sess],mode='lines+markers',line=dict(color='#16a34a',width=2.5),marker=dict(size=7,color='#16a34a'),fill='tozeroy',fillcolor='rgba(22,163,74,0.06)'))
-            fig.update_layout(title=dict(text='Pass Accuracy %',font=dict(size=13,color='#04080f'),x=0),paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category',tickfont=dict(size=10)),yaxis=dict(gridcolor='#f3f4f6',title='%',range=[0,100]),height=240,showlegend=False)
+            fig.update_layout(title='Pass Accuracy %',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category',tickfont=dict(size=10)),yaxis=dict(gridcolor='#f3f4f6',title='%',range=[0,100]),height=240,showlegend=False)
             st.plotly_chart(fig,use_container_width=True)
         with c4:
             cats=['Distance','Sprints','Passing','Attacking','Defending','Attitude']
@@ -1354,7 +1391,7 @@ if st.session_state.mode == "youth":
             norm=[min(round((v/m)*10,1),10) for v,m in zip(avgv,maxv)]
             fig=go.Figure()
             fig.add_trace(go.Scatterpolar(r=norm+[norm[0]],theta=cats+[cats[0]],fill='toself',fillcolor='rgba(26,58,138,0.1)',line=dict(color='#1a3a8a',width=2),marker=dict(size=5)))
-            fig.update_layout(title=dict(text='Performance Profile',font=dict(size=13,color='#04080f'),x=0),polar=dict(radialaxis=dict(visible=True,range=[0,10],gridcolor='#e5e7ef',tickfont=dict(size=8)),angularaxis=dict(gridcolor='#e5e7ef',tickfont=dict(size=10)),bgcolor='white'),paper_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),height=240,showlegend=False)
+            fig.update_layout(title='Performance Profile',polar=dict(radialaxis=dict(visible=True,range=[0,10],gridcolor='#e5e7ef',tickfont=dict(size=8)),angularaxis=dict(gridcolor='#e5e7ef',tickfont=dict(size=10)),bgcolor='white'),paper_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),height=240,showlegend=False)
             st.plotly_chart(fig,use_container_width=True)
 
         st.markdown('<div class="section-title">Development Indicators</div>', unsafe_allow_html=True)
@@ -1362,7 +1399,7 @@ if st.session_state.mode == "youth":
         fig.add_trace(go.Scatter(x=dates,y=[s[16] for s in sess],name='Coachability',line=dict(color='#1a3a8a',width=2),mode='lines+markers',marker=dict(size=6)))
         fig.add_trace(go.Scatter(x=dates,y=[s[17] for s in sess],name='Attitude',line=dict(color='#f5c842',width=2,dash='dash'),mode='lines+markers',marker=dict(size=6)))
         fig.add_trace(go.Scatter(x=dates,y=[s[18] for s in sess],name='Consistency',line=dict(color='#16a34a',width=2,dash='dot'),mode='lines+markers',marker=dict(size=6)))
-        fig.update_layout(title=dict(text='Development Scores',font=dict(size=13,color='#04080f'),x=0),paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category'),yaxis=dict(gridcolor='#f3f4f6',range=[0,10],title='Score /10'),legend=dict(orientation='h',yanchor='bottom',y=1.02,xanchor='right',x=1,font=dict(size=11)),height=260)
+        fig.update_layout(title='Development Scores',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category'),yaxis=dict(gridcolor='#f3f4f6',range=[0,10],title='Score /10'),legend=dict(orientation='h',yanchor='bottom',y=1.02,xanchor='right',x=1,font=dict(size=11)),height=260)
         st.plotly_chart(fig,use_container_width=True)
 
     # Media
@@ -1504,13 +1541,13 @@ else:
                     fig=go.Figure()
                     fig.add_trace(go.Bar(x=gws,y=[sg(s,7) for s in eps],name='Goals',marker_color='#1a3a8a',opacity=0.85,marker_line_width=0))
                     fig.add_trace(go.Bar(x=gws,y=[sg(s,8) for s in eps],name='Assists',marker_color='#3b82f6',opacity=0.85,marker_line_width=0))
-                    fig.update_layout(title=dict(text='Goals and Assists',font=dict(size=13,color='#04080f'),x=0),barmode='group',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category'),yaxis=dict(gridcolor='#f3f4f6'),legend=dict(orientation='h',yanchor='bottom',y=1.02,xanchor='right',x=1),height=240)
+                    fig.update_layout(title='Goals and Assists',barmode='group',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category'),yaxis=dict(gridcolor='#f3f4f6'),legend=dict(orientation='h',yanchor='bottom',y=1.02,xanchor='right',x=1),height=240)
                     st.plotly_chart(fig,use_container_width=True)
                 with cc2:
                     fig=go.Figure()
                     fig.add_trace(go.Scatter(x=gws,y=[round(float(sg(s,11,0)),2) for s in eps],name='xG',line=dict(color='#f5c842',width=2.5),mode='lines+markers',marker=dict(size=7)))
                     fig.add_trace(go.Scatter(x=gws,y=[sg(s,7) for s in eps],name='Goals',line=dict(color='#1a3a8a',width=2,dash='dash'),mode='lines+markers',marker=dict(size=7)))
-                    fig.update_layout(title=dict(text='xG vs Actual Goals',font=dict(size=13,color='#04080f'),x=0),paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category'),yaxis=dict(gridcolor='#f3f4f6'),legend=dict(orientation='h',yanchor='bottom',y=1.02,xanchor='right',x=1),height=240)
+                    fig.update_layout(title='xG vs Actual Goals',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=10),xaxis=dict(showgrid=False,type='category'),yaxis=dict(gridcolor='#f3f4f6'),legend=dict(orientation='h',yanchor='bottom',y=1.02,xanchor='right',x=1),height=240)
                     st.plotly_chart(fig,use_container_width=True)
 
             st.markdown('<div class="section-title">Performance Audit Report</div>', unsafe_allow_html=True)
@@ -1555,11 +1592,11 @@ Complete all sections. No truncation."""
                     with cc1:
                         fig=go.Figure()
                         fig.add_trace(go.Bar(x=top8['Player'],y=top8['Goals'],marker_color='#1a3a8a',opacity=0.85,marker_line_width=0))
-                        fig.update_layout(title=dict(text='Goals by Player',font=dict(size=13,color='#04080f'),x=0),paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=80),xaxis=dict(showgrid=False,tickangle=45,tickfont=dict(size=10)),yaxis=dict(gridcolor='#f3f4f6'),height=300,showlegend=False)
+                        fig.update_layout(title='Goals by Player',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=80),xaxis=dict(showgrid=False,tickangle=45,tickfont=dict(size=10)),yaxis=dict(gridcolor='#f3f4f6'),height=300,showlegend=False)
                         st.plotly_chart(fig,use_container_width=True)
                     with cc2:
                         fig=go.Figure()
                         fig.add_trace(go.Bar(x=top8['Player'],y=top8['xG'],name='xG',marker_color='#f5c842',opacity=0.85,marker_line_width=0))
                         fig.add_trace(go.Bar(x=top8['Player'],y=top8['Goals'],name='Goals',marker_color='#1a3a8a',opacity=0.7,marker_line_width=0))
-                        fig.update_layout(title=dict(text='xG vs Goals',font=dict(size=13,color='#04080f'),x=0),barmode='group',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=80),xaxis=dict(showgrid=False,tickangle=45,tickfont=dict(size=10)),yaxis=dict(gridcolor='#f3f4f6'),height=300,legend=dict(orientation='h',yanchor='bottom',y=1.02,xanchor='right',x=1))
+                        fig.update_layout(title='xG vs Goals',barmode='group',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=80),xaxis=dict(showgrid=False,tickangle=45,tickfont=dict(size=10)),yaxis=dict(gridcolor='#f3f4f6'),height=300,legend=dict(orientation='h',yanchor='bottom',y=1.02,xanchor='right',x=1))
                         st.plotly_chart(fig,use_container_width=True)
