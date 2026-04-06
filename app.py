@@ -884,29 +884,50 @@ def render_report(text, pid, pname, meta, is_pro=False):
         st.markdown('</div>', unsafe_allow_html=True)
     else:
         # Render report
-        st.markdown('<div class="report-wrapper">', unsafe_allow_html=True)
-        st.markdown(f'<div class="report-header"><div class="report-title">Scout IQ·FC — Scouting Report</div><div class="report-player-name">{pname}</div><div style="font-size:11px;color:#9ca3af;margin-top:6px;">{meta}</div></div>', unsafe_allow_html=True)
+        # Build full HTML as one block to avoid white gaps between st.markdown calls
+        html = '''<div style="background:#ffffff;border:1.5px solid #e5e7ef;border-radius:16px;
+            padding:44px 52px;box-shadow:0 2px 16px rgba(0,0,0,0.06);margin-top:8px;">'''
+
+        # Report header
+        html += f'''
+            <div style="border-bottom:2px solid #0d1117;padding-bottom:20px;margin-bottom:28px;">
+                <div style="font-size:10px;font-weight:700;color:#f5c842;letter-spacing:4px;
+                    text-transform:uppercase;margin-bottom:8px;">Scout IQ·FC — Scouting Report</div>
+                <div style="font-family:Georgia,serif;font-size:28px;font-weight:700;
+                    color:#0d1117;letter-spacing:-0.5px;">{pname}</div>
+                <div style="font-size:11px;color:#9ca3af;margin-top:6px;letter-spacing:1px;">{meta}</div>
+            </div>'''
+
         in_exec = False
         for line in active.split('\n'):
             line = line.strip()
             if not line:
                 if in_exec:
-                    st.markdown('</div>', unsafe_allow_html=True); in_exec = False
-                st.markdown('<div style="height:6px"></div>', unsafe_allow_html=True)
+                    html += '</div>'
+                    in_exec = False
+                html += '<div style="height:6px"></div>'
             elif line.upper().startswith('EXECUTIVE SUMMARY'):
-                st.markdown('<div class="exec-summary">', unsafe_allow_html=True)
-                st.markdown(f'<div class="report-section-label">Executive Summary</div>', unsafe_allow_html=True)
+                html += '''<div style="background:#fffbeb;border-left:4px solid #f5c842;
+                    border-radius:0 10px 10px 0;padding:18px 22px;margin-bottom:24px;">
+                    <div style="font-size:9px;font-weight:700;color:#92400e;letter-spacing:3px;
+                    text-transform:uppercase;margin-bottom:10px;">Executive Summary</div>'''
                 in_exec = True
             elif line[0].isdigit() and '.' in line[:3]:
                 if in_exec:
-                    st.markdown('</div>', unsafe_allow_html=True); in_exec = False
-                st.markdown(f'<div class="report-section-label">{line}</div>', unsafe_allow_html=True)
+                    html += '</div>'
+                    in_exec = False
+                html += f'''<div style="font-size:9px;font-weight:700;color:#1a3a8a;letter-spacing:3px;
+                    text-transform:uppercase;margin:24px 0 10px;padding-bottom:8px;
+                    border-bottom:1px solid #f3f4f6;">{line}</div>'''
             else:
                 clean = line.replace('**','').replace('--','').replace('#','')
-                st.markdown(f'<div class="report-para">{clean}</div>', unsafe_allow_html=True)
+                if clean:
+                    html += f'<div style="font-size:14px;color:#374151;line-height:1.9;margin-bottom:3px;">{clean}</div>'
+
         if in_exec:
-            st.markdown('</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+            html += '</div>'
+        html += '</div>'
+        st.markdown(html, unsafe_allow_html=True)
 
         if notes:
             st.markdown(f'<div class="coach-notes-wrap"><div class="coach-notes-label">Coach Annotations</div><div style="font-size:13px;color:#92400e;line-height:1.8;">{notes}</div></div>', unsafe_allow_html=True)
@@ -1402,6 +1423,15 @@ if st.session_state.mode == "youth":
         st.plotly_chart(fig,use_container_width=True)
 
     # Media
+    st.markdown("""
+    <style>
+    /* Hide the auto-generated streamlit file uploader label text */
+    [data-testid="stFileUploaderDropzoneInstructions"] { display: none !important; }
+    [data-testid="stFileUploader"] > label { display: none !important; }
+    /* Hide duplicate upload button text - keep only the button itself */
+    [data-testid="stFileUploaderDropzone"] > div > div:first-child { display: none !important; }
+    </style>
+    """, unsafe_allow_html=True)
     st.markdown('<div class="section-title">Player Media</div>', unsafe_allow_html=True)
     pc,vc=st.columns(2)
     with pc:
