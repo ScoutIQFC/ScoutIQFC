@@ -884,50 +884,29 @@ def render_report(text, pid, pname, meta, is_pro=False):
         st.markdown('</div>', unsafe_allow_html=True)
     else:
         # Render report
-        # Build full HTML as one block to avoid white gaps between st.markdown calls
-        html = '''<div style="background:#ffffff;border:1.5px solid #e5e7ef;border-radius:16px;
-            padding:44px 52px;box-shadow:0 2px 16px rgba(0,0,0,0.06);margin-top:8px;">'''
-
-        # Report header
-        html += f'''
-            <div style="border-bottom:2px solid #0d1117;padding-bottom:20px;margin-bottom:28px;">
-                <div style="font-size:10px;font-weight:700;color:#f5c842;letter-spacing:4px;
-                    text-transform:uppercase;margin-bottom:8px;">Scout IQ·FC — Scouting Report</div>
-                <div style="font-family:Georgia,serif;font-size:28px;font-weight:700;
-                    color:#0d1117;letter-spacing:-0.5px;">{pname}</div>
-                <div style="font-size:11px;color:#9ca3af;margin-top:6px;letter-spacing:1px;">{meta}</div>
-            </div>'''
-
+        st.markdown('<div class="report-wrapper">', unsafe_allow_html=True)
+        st.markdown(f'<div class="report-header"><div class="report-title">Scout IQ·FC — Scouting Report</div><div class="report-player-name">{pname}</div><div style="font-size:11px;color:#9ca3af;margin-top:6px;">{meta}</div></div>', unsafe_allow_html=True)
         in_exec = False
         for line in active.split('\n'):
             line = line.strip()
             if not line:
                 if in_exec:
-                    html += '</div>'
-                    in_exec = False
-                html += '<div style="height:6px"></div>'
+                    st.markdown('</div>', unsafe_allow_html=True); in_exec = False
+                st.markdown('<div style="height:6px"></div>', unsafe_allow_html=True)
             elif line.upper().startswith('EXECUTIVE SUMMARY'):
-                html += '''<div style="background:#fffbeb;border-left:4px solid #f5c842;
-                    border-radius:0 10px 10px 0;padding:18px 22px;margin-bottom:24px;">
-                    <div style="font-size:9px;font-weight:700;color:#92400e;letter-spacing:3px;
-                    text-transform:uppercase;margin-bottom:10px;">Executive Summary</div>'''
+                st.markdown('<div class="exec-summary">', unsafe_allow_html=True)
+                st.markdown(f'<div class="report-section-label">Executive Summary</div>', unsafe_allow_html=True)
                 in_exec = True
             elif line[0].isdigit() and '.' in line[:3]:
                 if in_exec:
-                    html += '</div>'
-                    in_exec = False
-                html += f'''<div style="font-size:9px;font-weight:700;color:#1a3a8a;letter-spacing:3px;
-                    text-transform:uppercase;margin:24px 0 10px;padding-bottom:8px;
-                    border-bottom:1px solid #f3f4f6;">{line}</div>'''
+                    st.markdown('</div>', unsafe_allow_html=True); in_exec = False
+                st.markdown(f'<div class="report-section-label">{line}</div>', unsafe_allow_html=True)
             else:
                 clean = line.replace('**','').replace('--','').replace('#','')
-                if clean:
-                    html += f'<div style="font-size:14px;color:#374151;line-height:1.9;margin-bottom:3px;">{clean}</div>'
-
+                st.markdown(f'<div class="report-para">{clean}</div>', unsafe_allow_html=True)
         if in_exec:
-            html += '</div>'
-        html += '</div>'
-        st.markdown(html, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
         if notes:
             st.markdown(f'<div class="coach-notes-wrap"><div class="coach-notes-label">Coach Annotations</div><div style="font-size:13px;color:#92400e;line-height:1.8;">{notes}</div></div>', unsafe_allow_html=True)
@@ -1423,15 +1402,6 @@ if st.session_state.mode == "youth":
         st.plotly_chart(fig,use_container_width=True)
 
     # Media
-    st.markdown("""
-    <style>
-    /* Hide the auto-generated streamlit file uploader label text */
-    [data-testid="stFileUploaderDropzoneInstructions"] { display: none !important; }
-    [data-testid="stFileUploader"] > label { display: none !important; }
-    /* Hide duplicate upload button text - keep only the button itself */
-    [data-testid="stFileUploaderDropzone"] > div > div:first-child { display: none !important; }
-    </style>
-    """, unsafe_allow_html=True)
     st.markdown('<div class="section-title">Player Media</div>', unsafe_allow_html=True)
     pc,vc=st.columns(2)
     with pc:
@@ -1490,54 +1460,138 @@ else:
 
     with tab1:
         st.markdown('<div class="section-title">Upload Professional Data</div>', unsafe_allow_html=True)
-        st.markdown('<div class="upload-banner"><p style="font-size:13px;font-weight:600;color:#1d4ed8;margin-bottom:4px;">Import EPL / Professional Data</p><p style="font-size:12px;color:#6b7280;margin:0;">Use ScoutIQ_EPL_ManUtd_Arsenal.xlsx or export from FBref, Sofascore or WhoScored</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="upload-banner"><p style="font-size:13px;font-weight:600;color:#1d4ed8;margin-bottom:4px;">Import Professional Player Data</p><p style="font-size:12px;color:#6b7280;margin:0;">Supports season stats files (FootyStats, FBref, WhoScored) or gameweek-by-gameweek match data. Your Premierleague_Data.xlsx format is fully supported.</p></div>', unsafe_allow_html=True)
+
         uploaded=st.file_uploader("Upload",type=["xlsx","csv"],label_visibility="collapsed")
         if uploaded:
             try:
                 df=pd.read_csv(uploaded) if uploaded.name.endswith('.csv') else pd.read_excel(uploaded)
-                st.success(f"{len(df)} rows loaded")
+                st.success(f"{len(df)} rows loaded — {df.shape[1]} columns detected")
                 st.dataframe(df.head(3),use_container_width=True)
-                team_name=st.text_input("Team name",placeholder="e.g. Manchester United")
-                cols=["(skip)"]+list(df.columns)
-                with st.expander("Map columns"):
-                    cc1,cc2,cc3=st.columns(3)
-                    with cc1:
-                        nc=st.selectbox("Player name",cols,key="nc"); poc=st.selectbox("Position",cols,key="poc")
-                        agc=st.selectbox("Age",cols,key="agc"); natc=st.selectbox("Nationality",cols,key="natc")
-                    with cc2:
-                        mc=st.selectbox("Minutes",cols,key="mc"); gc=st.selectbox("Goals",cols,key="gc")
-                        ac=st.selectbox("Assists",cols,key="ac"); shc=st.selectbox("Shots",cols,key="shc")
-                        sotc=st.selectbox("Shots on target",cols,key="sotc")
-                    with cc3:
-                        xgc=st.selectbox("xG",cols,key="xgc"); xac=st.selectbox("xA",cols,key="xac")
-                        pcc=st.selectbox("Passes completed",cols,key="pcc"); tc=st.selectbox("Tackles",cols,key="tc")
-                        gwc=st.selectbox("Gameweek",cols,key="gwc"); oppc=st.selectbox("Opponent",cols,key="oppc")
-                        ratc=st.selectbox("Rating",cols,key="ratc")
-                if st.button("Import Data",key="imp"):
-                    if not team_name: st.error("Enter team name")
-                    elif nc=="(skip)": st.error("Map player name column")
-                    else:
-                        def sv(row,col,default=0,fl=False):
-                            if col=="(skip)": return default
+
+                # Auto-detect format
+                cols_lower = [str(c).lower() for c in df.columns]
+                is_season_format = any(c in cols_lower for c in ['full_name','goals_overall','minutes_played_overall','appearances_overall'])
+                is_gameweek_format = any(c in cols_lower for c in ['gameweek','opponent','xg','xa'])
+
+                if is_season_format:
+                    st.info("Season stats format detected — this will import each player as one record with their full season totals.")
+                    if st.button("Import All Players", key="imp_season"):
+                        imported = 0
+                        errors = []
+                        def gv(row, col, default=0, fl=False):
                             try:
-                                v=row.get(col,default)
+                                v = row.get(col, default)
                                 if pd.isna(v): return default
                                 return float(v) if fl else int(float(v))
                             except: return default
-                        imported=0
-                        for _,row in df.iterrows():
-                            pname=str(row.get(nc,"")).strip()
-                            if not pname or pname=="nan": continue
-                            cursor.execute("SELECT id FROM epl_players WHERE name=? AND team=?",(pname,team_name))
-                            ex=cursor.fetchone()
-                            if ex: epid=ex[0]
-                            else:
-                                cursor.execute("INSERT INTO epl_players (name,team,position,nationality,age) VALUES (?,?,?,?,?)",(pname,team_name,str(row.get(poc,"")) if poc!="(skip)" else "",str(row.get(natc,"")) if natc!="(skip)" else "",sv(row,agc)))
-                                conn.commit(); epid=cursor.lastrowid
-                            cursor.execute("INSERT INTO epl_sessions (player_id,gameweek,opponent,minutes_played,goals,assists,shots,shots_on_target,xg,xa,passes_completed,tackles_won,rating) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                                (epid,sv(row,gwc),str(row.get(oppc,"")) if oppc!="(skip)" else "",sv(row,mc),sv(row,gc),sv(row,ac),sv(row,shc),sv(row,sotc),sv(row,xgc,0,True),sv(row,xac,0,True),sv(row,pcc),sv(row,tc),sv(row,ratc,0,True)))
-                            conn.commit(); imported+=1
-                        st.success(f"Imported {imported} records for {team_name}"); st.rerun()
+
+                        for _, row in df.iterrows():
+                            try:
+                                # Get player name - try full_name first, then name
+                                pname = str(row.get("full_name", row.get("name", ""))).strip()
+                                if not pname or pname == "nan": continue
+
+                                team = str(row.get("Current Club", row.get("team", row.get("club", "Unknown")))).strip()
+                                position = str(row.get("position", "")).strip()
+                                nationality = str(row.get("nationality", "")).strip()
+                                age = gv(row, "age")
+                                season = str(row.get("season", "2024/25")).strip()
+
+                                # Check if player already exists
+                                cursor.execute("SELECT id FROM epl_players WHERE name=? AND team=?", (pname, team))
+                                ex = cursor.fetchone()
+                                if ex:
+                                    epid = ex[0]
+                                else:
+                                    cursor.execute("INSERT INTO epl_players (name,team,position,nationality,age) VALUES (?,?,?,?,?)",
+                                        (pname, team, position, nationality, age))
+                                    conn.commit()
+                                    epid = cursor.lastrowid
+
+                                # Map season stats to a single session record
+                                mins = gv(row, "minutes_played_overall")
+                                goals = gv(row, "goals_overall")
+                                assists = gv(row, "assists_overall")
+                                appearances = gv(row, "appearances_overall")
+                                yellow_cards = gv(row, "yellow_cards_overall")
+                                red_cards = gv(row, "red_cards_overall")
+                                goals_p90 = gv(row, "goals_per_90_overall", 0, True)
+                                assists_p90 = gv(row, "assists_per_90_overall", 0, True)
+                                clean_sheets = gv(row, "clean_sheets_overall")
+
+                                # Store as gameweek=0 meaning full season
+                                cursor.execute("""INSERT INTO epl_sessions
+                                    (player_id, gameweek, opponent, minutes_played, goals, assists,
+                                    shots, shots_on_target, xg, xa, passes_completed, tackles_won,
+                                    yellow_cards, red_cards, rating)
+                                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                                    (epid, 0, f"Full Season {season}",
+                                    mins, goals, assists,
+                                    0, 0,
+                                    round(goals_p90 * mins/90, 2) if mins > 0 else 0,
+                                    round(assists_p90 * mins/90, 2) if mins > 0 else 0,
+                                    appearances, clean_sheets,
+                                    yellow_cards, red_cards,
+                                    round(goals_p90 + assists_p90, 2)))
+                                conn.commit()
+                                imported += 1
+                            except Exception as e:
+                                errors.append(f"{pname}: {e}")
+                                continue
+
+                        if imported > 0:
+                            st.success(f"Successfully imported {imported} players")
+                            if errors:
+                                st.warning(f"{len(errors)} rows skipped")
+                            st.rerun()
+                        else:
+                            st.error("No players imported. Check the file format.")
+                            for e in errors[:5]: st.write(e)
+                else:
+                    # Manual column mapping for gameweek format
+                    team_name=st.text_input("Team name",placeholder="e.g. Manchester United")
+                    cols=["(skip)"]+list(df.columns)
+                    with st.expander("Map columns"):
+                        cc1,cc2,cc3=st.columns(3)
+                        with cc1:
+                            nc=st.selectbox("Player name",cols,key="nc"); poc=st.selectbox("Position",cols,key="poc")
+                            agc=st.selectbox("Age",cols,key="agc"); natc=st.selectbox("Nationality",cols,key="natc")
+                        with cc2:
+                            mc=st.selectbox("Minutes",cols,key="mc"); gc=st.selectbox("Goals",cols,key="gc")
+                            ac=st.selectbox("Assists",cols,key="ac"); shc=st.selectbox("Shots",cols,key="shc")
+                            sotc=st.selectbox("Shots on target",cols,key="sotc")
+                        with cc3:
+                            xgc=st.selectbox("xG",cols,key="xgc"); xac=st.selectbox("xA",cols,key="xac")
+                            pcc=st.selectbox("Passes completed",cols,key="pcc"); tc=st.selectbox("Tackles",cols,key="tc")
+                            gwc=st.selectbox("Gameweek",cols,key="gwc"); oppc=st.selectbox("Opponent",cols,key="oppc")
+                            ratc=st.selectbox("Rating",cols,key="ratc")
+
+                    if st.button("Import Data",key="imp"):
+                        if not team_name: st.error("Enter team name")
+                        elif nc=="(skip)": st.error("Map player name column")
+                        else:
+                            def sv(row,col,default=0,fl=False):
+                                if col=="(skip)": return default
+                                try:
+                                    v=row.get(col,default)
+                                    if pd.isna(v): return default
+                                    return float(v) if fl else int(float(v))
+                                except: return default
+                            imported=0
+                            for _,row in df.iterrows():
+                                pname=str(row.get(nc,"")).strip()
+                                if not pname or pname=="nan": continue
+                                cursor.execute("SELECT id FROM epl_players WHERE name=? AND team=?",(pname,team_name))
+                                ex=cursor.fetchone()
+                                if ex: epid=ex[0]
+                                else:
+                                    cursor.execute("INSERT INTO epl_players (name,team,position,nationality,age) VALUES (?,?,?,?,?)",(pname,team_name,str(row.get(poc,"")) if poc!="(skip)" else "",str(row.get(natc,"")) if natc!="(skip)" else "",sv(row,agc)))
+                                    conn.commit(); epid=cursor.lastrowid
+                                cursor.execute("INSERT INTO epl_sessions (player_id,gameweek,opponent,minutes_played,goals,assists,shots,shots_on_target,xg,xa,passes_completed,tackles_won,rating) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                                    (epid,sv(row,gwc),str(row.get(oppc,"")) if oppc!="(skip)" else "",sv(row,mc),sv(row,gc),sv(row,ac),sv(row,shc),sv(row,sotc),sv(row,xgc,0,True),sv(row,xac,0,True),sv(row,pcc),sv(row,tc),sv(row,ratc,0,True)))
+                                conn.commit(); imported+=1
+                            st.success(f"Imported {imported} records for {team_name}"); st.rerun()
             except Exception as e: st.error(f"Error: {e}")
 
     with tab2:
