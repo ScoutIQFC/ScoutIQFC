@@ -1643,9 +1643,12 @@ else:
         cursor.execute("SELECT DISTINCT team FROM epl_players ORDER BY team")
         del_teams = [r[0] for r in cursor.fetchall()]
         if del_teams:
-            del_team = st.selectbox("Select team to delete", ["-- Select --"] + del_teams, key="del_team_sel")
-            if del_team != "-- Select --":
-                st.warning(f"This permanently deletes all data for **{del_team}**.")
+            st.markdown(f'<p style="font-size:12px;color:#6b7280;margin-bottom:12px;">{len(del_teams)} team(s) currently uploaded</p>', unsafe_allow_html=True)
+
+            # Delete single team
+            del_team = st.selectbox("Delete a specific team", ["-- Select team --"] + del_teams, key="del_team_sel")
+            if del_team != "-- Select team --":
+                st.warning(f"This permanently deletes all players and match data for **{del_team}**.")
                 if st.button(f"Delete {del_team}", key="del_team_btn"):
                     pids_to_del = [r[0] for r in cursor.execute("SELECT id FROM epl_players WHERE team=?", (del_team,)).fetchall()]
                     for p in pids_to_del:
@@ -1653,9 +1656,36 @@ else:
                         cursor.execute("DELETE FROM epl_reports WHERE player_id=?", (p,))
                     cursor.execute("DELETE FROM epl_players WHERE team=?", (del_team,))
                     conn.commit()
-                    st.success(f"{del_team} deleted. Refreshing...")
+                    st.success(f"{del_team} deleted.")
                     st.session_state.selected_epl_player_id = None
                     st.rerun()
+
+            # Delete ALL data
+            st.markdown('<hr style="border-top:1px solid #e5e7ef;margin:20px 0;">', unsafe_allow_html=True)
+            st.markdown('<p style="font-size:12px;font-weight:600;color:#dc2626;margin-bottom:8px;">Danger Zone</p>', unsafe_allow_html=True)
+            if st.button("Delete All Uploaded Pro Data", key="del_all_btn"):
+                st.session_state["confirm_del_all"] = True
+
+            if st.session_state.get("confirm_del_all"):
+                st.error("This will permanently delete ALL teams, players, sessions and reports from Pro Data. This cannot be undone.")
+                ca1, ca2, _ = st.columns([1, 1, 3])
+                with ca1:
+                    if st.button("Yes, delete everything", key="confirm_del_all_yes"):
+                        cursor.execute("SELECT id FROM epl_players")
+                        all_pids = [r[0] for r in cursor.fetchall()]
+                        for p in all_pids:
+                            cursor.execute("DELETE FROM epl_sessions WHERE player_id=?", (p,))
+                            cursor.execute("DELETE FROM epl_reports WHERE player_id=?", (p,))
+                        cursor.execute("DELETE FROM epl_players")
+                        conn.commit()
+                        st.session_state["confirm_del_all"] = False
+                        st.session_state.selected_epl_player_id = None
+                        st.success("All Pro Data deleted.")
+                        st.rerun()
+                with ca2:
+                    if st.button("Cancel", key="cancel_del_all"):
+                        st.session_state["confirm_del_all"] = False
+                        st.rerun()
         else:
             st.caption("No professional data uploaded yet.")
 
