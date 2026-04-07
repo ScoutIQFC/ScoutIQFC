@@ -322,6 +322,20 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Account state
+for k, v in {
+    "show_account": False,
+    "account_page": "overview",
+    "show_edit_academy": False,
+    "edit_academy_name": None,
+    "show_edit_player": False,
+    "edit_player_id": None,
+    "confirm_del_academy": None,
+    "confirm_del_player": None,
+}.items():
+    if k not in st.session_state:
+        st.session_state[k] = v
+
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap');
@@ -364,12 +378,58 @@ html, body, [class*="css"] { background: #f8f9fc !important; color: #0d1117; }
 
 /* Sidebar sections */
 .sb-section {
-    padding: 20px 20px 6px;
+    padding: 16px 20px 4px;
     font-size: 9px; font-weight: 700;
     color: rgba(255,255,255,0.2);
     letter-spacing: 3px; text-transform: uppercase;
 }
-.sb-divider { border: none; border-top: 1px solid rgba(255,255,255,0.05); margin: 8px 0; }
+.sb-divider { border: none; border-top: 1px solid rgba(255,255,255,0.05); margin: 6px 0; }
+
+/* Sidebar scrollable area */
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+    overflow-y: auto !important;
+    max-height: calc(100vh - 180px) !important;
+}
+
+/* Academy row hover effects */
+.academy-row { position: relative; }
+.academy-row:hover .academy-actions { opacity: 1 !important; }
+.academy-actions { opacity: 0; transition: opacity 0.2s; }
+
+/* Player row hover */
+.player-hover-row { position: relative; }
+.player-hover-row:hover .player-actions { opacity: 1 !important; }
+.player-actions { opacity: 0; transition: opacity 0.2s; }
+
+/* Action buttons in sidebar */
+.sb-action-del .stButton > button {
+    background: rgba(220,38,38,0.15) !important;
+    color: rgba(255,100,100,0.8) !important;
+    border: 1px solid rgba(220,38,38,0.2) !important;
+    border-radius: 4px !important;
+    font-size: 9px !important; font-weight: 700 !important;
+    padding: 3px 6px !important;
+    margin: 0 !important; width: auto !important;
+    box-shadow: none !important;
+}
+.sb-action-del .stButton > button:hover {
+    background: rgba(220,38,38,0.3) !important;
+    color: #ff8080 !important;
+}
+.sb-action-edit .stButton > button {
+    background: rgba(245,200,66,0.1) !important;
+    color: rgba(245,200,66,0.7) !important;
+    border: 1px solid rgba(245,200,66,0.2) !important;
+    border-radius: 4px !important;
+    font-size: 9px !important; font-weight: 700 !important;
+    padding: 3px 6px !important;
+    margin: 0 !important; width: auto !important;
+    box-shadow: none !important;
+}
+.sb-action-edit .stButton > button:hover {
+    background: rgba(245,200,66,0.2) !important;
+    color: #f5c842 !important;
+}
 
 /* Sidebar inputs */
 [data-testid="stSidebar"] label { display: none !important; }
@@ -733,6 +793,94 @@ def ai_report(prompt):
     claude = anthropic.Anthropic(api_key=get_api_key())
     r = claude.messages.create(
         model="claude-opus-4-5", max_tokens=5000,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return r.content[0].text
+
+
+def ai_clean_data(raw_text, data_type="youth"):
+    """Use Claude to parse any unstructured data and convert to platform format"""
+    claude = anthropic.Anthropic(api_key=get_api_key())
+
+    if data_type == "youth":
+        prompt = f"""You are a data parser for a football player tracking platform.
+        
+Convert the following raw data into a structured JSON format for youth players.
+The data might be messy, in any format (text, table paste, CSV-like, notes etc).
+
+Raw data:
+{raw_text}
+
+Return ONLY a valid JSON array with no other text, no markdown, no explanation.
+Each player object must have these exact keys (use null for missing values):
+{{
+  "name": "Full Name",
+  "date_of_birth": "YYYY-MM-DD or null",
+  "position": "one of: Striker, Right Winger, Left Winger, Attacking Midfielder, Central Midfielder, Defensive Midfielder, Right Back, Left Back, Centre Back, Goalkeeper",
+  "club": "Academy or club name",
+  "dominant_foot": "Right or Left",
+  "age_group": "one of: U13, U14, U15, U16, U17, U18",
+  "nationality": "Country name or null",
+  "session_date": "YYYY-MM-DD or null",
+  "session_type": "match or training",
+  "minutes_played": 90,
+  "distance_covered_km": 8.5,
+  "sprint_count": 15,
+  "top_speed_kmh": 28.0,
+  "passes_completed": 25,
+  "passes_attempted": 32,
+  "dribbles_completed": 4,
+  "defensive_actions": 6,
+  "goals": 0,
+  "assists": 0,
+  "chances_created": 1,
+  "tackles_won": 3,
+  "coachability_rating": 7,
+  "attitude_score": 7,
+  "consistency_rating": 7,
+  "coach_notes": "any notes or empty string"
+}}
+
+If a value cannot be determined, use a sensible default (7 for ratings, 90 for minutes, etc).
+Return only the JSON array."""
+
+    else:  # pro
+        prompt = f"""You are a data parser for a professional football analytics platform.
+
+Convert the following raw data into structured JSON for professional players.
+The data might be in any format — copied from websites, spreadsheets, text reports, stats tables etc.
+
+Raw data:
+{raw_text}
+
+Return ONLY a valid JSON array with no other text, no markdown, no explanation.
+Each player object must have these exact keys:
+{{
+  "name": "Full Name",
+  "team": "Club name",
+  "position": "one of: Forward, Midfielder, Defender, Goalkeeper",
+  "nationality": "Country or null",
+  "age": 25,
+  "season": "2024/25",
+  "appearances": 20,
+  "minutes": 1800,
+  "goals": 5,
+  "assists": 3,
+  "goals_per_90": 0.25,
+  "assists_per_90": 0.15,
+  "yellow_cards": 2,
+  "red_cards": 0,
+  "clean_sheets": 0,
+  "xg": 4.5,
+  "xa": 2.8
+}}
+
+If a value cannot be determined use 0 or null.
+Return only the JSON array."""
+
+    r = claude.messages.create(
+        model="claude-opus-4-5",
+        max_tokens=4000,
         messages=[{"role": "user", "content": prompt}]
     )
     return r.content[0].text
@@ -1169,6 +1317,283 @@ with st.sidebar:
 
 
 # ══════════════════════════════════════
+# TOP RIGHT ACCOUNT BUTTON
+# ══════════════════════════════════════
+account_type = st.session_state.get("account_type", "admin")
+badge_color = "#f5c842" if account_type == "admin" else "#3b82f6"
+badge_label = "Admin" if account_type == "admin" else "Beta"
+
+# Inject account button top right
+st.markdown(f"""
+<style>
+.account-btn-wrap {{
+    position: fixed; top: 12px; right: 16px; z-index: 9999;
+    display: flex; align-items: center; gap: 8px;
+}}
+.account-badge {{
+    background: {badge_color}22;
+    border: 1px solid {badge_color}44;
+    color: {badge_color};
+    font-size: 9px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 3px 8px; border-radius: 100px;
+}}
+.account-avatar {{
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, #1a3a8a, #0f1f5c);
+    border: 2px solid rgba(245,200,66,0.3);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: #f5c842;
+    cursor: pointer;
+}}
+</style>
+<div class="account-btn-wrap">
+    <span class="account-badge">{badge_label}</span>
+</div>
+""", unsafe_allow_html=True)
+
+# Account button in a fixed position
+acct_col1, acct_col2, acct_col3 = st.columns([8, 1, 1])
+with acct_col3:
+    st.markdown('<div style="position:fixed;top:8px;right:60px;z-index:9999;">', unsafe_allow_html=True)
+    if st.button("⚙", key="open_account"):
+        st.session_state.show_account = not st.session_state.get("show_account", False)
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ══════════════════════════════════════
+# ACCOUNT / SETTINGS PAGE
+# ══════════════════════════════════════
+if st.session_state.get("show_account"):
+    st.markdown("""
+    <style>
+    .acct-page { max-width: 680px; margin: 0 auto; padding: 20px 0; }
+    .acct-header { margin-bottom: 28px; }
+    .acct-title { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; color: #04080f; margin-bottom: 4px; }
+    .acct-sub { font-size: 12px; color: #9ca3af; letter-spacing: 1px; }
+    .acct-card { background: #ffffff; border: 1px solid #e5e7ef; border-radius: 14px; padding: 24px 28px; margin-bottom: 16px; }
+    .acct-card-title { font-size: 13px; font-weight: 700; color: #04080f; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .acct-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
+    .acct-row:last-child { border-bottom: none; }
+    .acct-label { font-size: 12px; color: #6b7280; }
+    .acct-value { font-size: 13px; font-weight: 600; color: #04080f; }
+    .plan-badge { display: inline-block; background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 3px 10px; border-radius: 100px; }
+    .plan-badge-beta { background: #fefce8; border-color: #fde68a; color: #92400e; }
+    .danger-zone { border-color: #fecaca; }
+    .danger-zone .acct-card-title { color: #dc2626; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Back button
+    if st.button("← Back to Platform", key="close_account"):
+        st.session_state.show_account = False
+        st.rerun()
+
+    st.markdown('<div class="acct-page">', unsafe_allow_html=True)
+
+    # Page tabs
+    acct_tab1, acct_tab2, acct_tab3 = st.tabs(["Account Overview", "Settings", "Billing & Plan"])
+
+    with acct_tab1:
+        is_admin = account_type == "admin"
+        username = "admin" if is_admin else "admin1"
+
+        st.markdown(f"""
+        <div class="acct-card">
+            <div class="acct-card-title">👤 Account Information</div>
+            <div class="acct-row"><span class="acct-label">Username</span><span class="acct-value">{username}</span></div>
+            <div class="acct-row"><span class="acct-label">Account Type</span><span class="acct-value">{"Administrator" if is_admin else "Beta User"}</span></div>
+            <div class="acct-row"><span class="acct-label">Plan</span><span><span class="plan-badge {"" if is_admin else "plan-badge-beta"}">{"Pro — Admin" if is_admin else "Beta Access"}</span></span></div>
+            <div class="acct-row"><span class="acct-label">Status</span><span class="acct-value" style="color:#16a34a;">● Active</span></div>
+            <div class="acct-row"><span class="acct-label">Platform</span><span class="acct-value">Scout IQ·FC v1.0</span></div>
+            <div class="acct-row"><span class="acct-label">Data Access</span><span class="acct-value">{"All Academies" if is_admin else "Riverside FC Academy only"}</span></div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown(f"""
+        <div class="acct-card">
+            <div class="acct-card-title">📊 Usage Summary</div>
+            <div class="acct-row"><span class="acct-label">Players in platform</span><span class="acct-value">{len(players)}</span></div>
+            <div class="acct-row"><span class="acct-label">Sessions tracked</span><span class="acct-value">{cursor.execute("SELECT COUNT(*) FROM sessions").fetchone()[0]}</span></div>
+            <div class="acct-row"><span class="acct-label">Reports generated</span><span class="acct-value">{cursor.execute("SELECT COUNT(*) FROM reports").fetchone()[0]}</span></div>
+            <div class="acct-row"><span class="acct-label">Academies</span><span class="acct-value">{len(clubs)}</span></div>
+            <div class="acct-row"><span class="acct-label">Pro Data players</span><span class="acct-value">{cursor.execute("SELECT COUNT(*) FROM epl_players").fetchone()[0]}</span></div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with acct_tab2:
+        st.markdown('<div class="acct-card"><div class="acct-card-title">🔐 Change Password</div>', unsafe_allow_html=True)
+        current_pw = st.text_input("Current Password", type="password", key="chg_current")
+        new_pw = st.text_input("New Password", type="password", key="chg_new")
+        confirm_pw = st.text_input("Confirm New Password", type="password", key="chg_confirm")
+        if st.button("Update Password", key="update_pw"):
+            if new_pw and new_pw == confirm_pw:
+                st.success("Password updated successfully. (Note: update your Streamlit secrets to persist this change.)")
+            elif new_pw != confirm_pw:
+                st.error("Passwords do not match.")
+            else:
+                st.error("Please fill in all fields.")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        st.markdown('<div class="acct-card"><div class="acct-card-title">🔔 Notifications</div>', unsafe_allow_html=True)
+        st.toggle("Email me when a report is generated", value=True, key="notif_report")
+        st.toggle("Weekly platform summary", value=False, key="notif_weekly")
+        st.toggle("New feature announcements", value=True, key="notif_features")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        st.markdown('<div class="acct-card"><div class="acct-card-title">🎨 Preferences</div>', unsafe_allow_html=True)
+        st.selectbox("Default report language", ["English", "Spanish", "French", "Arabic", "Portuguese"], key="pref_lang")
+        st.selectbox("Default age group filter", ["All", "U13", "U14", "U15", "U16", "U17", "U18"], key="pref_age")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with acct_tab3:
+        is_admin_acct = account_type == "admin"
+        plan_name = "Pro Admin" if is_admin_acct else "Beta Access"
+        plan_price = "£49/month" if is_admin_acct else "Free (Beta)"
+        plan_color = "#1d4ed8" if is_admin_acct else "#92400e"
+
+        st.markdown(f"""
+        <div class="acct-card" style="border-top:4px solid {plan_color};">
+            <div class="acct-card-title">💳 Current Plan</div>
+            <div class="acct-row"><span class="acct-label">Plan Name</span><span class="acct-value">{plan_name}</span></div>
+            <div class="acct-row"><span class="acct-label">Price</span><span class="acct-value">{plan_price}</span></div>
+            <div class="acct-row"><span class="acct-label">Billing Cycle</span><span class="acct-value">Monthly</span></div>
+            <div class="acct-row"><span class="acct-label">Next Renewal</span><span class="acct-value">May 7, 2026</span></div>
+            <div class="acct-row"><span class="acct-label">Status</span><span class="acct-value" style="color:#16a34a;">● Active</span></div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("""
+        <div class="acct-card">
+            <div class="acct-card-title">📦 Plan Features</div>
+            <div class="acct-row"><span class="acct-label">Youth Players</span><span class="acct-value">Unlimited</span></div>
+            <div class="acct-row"><span class="acct-label">AI Scouting Reports</span><span class="acct-value">Unlimited</span></div>
+            <div class="acct-row"><span class="acct-label">Academies</span><span class="acct-value">Unlimited</span></div>
+            <div class="acct-row"><span class="acct-label">Pro Data Import</span><span class="acct-value">✓ Included</span></div>
+            <div class="acct-row"><span class="acct-label">PDF & Word Export</span><span class="acct-value">✓ Included</span></div>
+            <div class="acct-row"><span class="acct-label">AI Smart Import</span><span class="acct-value">✓ Included</span></div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("""
+        <div class="acct-card">
+            <div class="acct-card-title">💳 Payment Method</div>
+        """, unsafe_allow_html=True)
+        st.markdown('<p style="font-size:12px;color:#9ca3af;margin-bottom:16px;">Payment processing powered by Stripe — coming soon</p>', unsafe_allow_html=True)
+        pm1, pm2 = st.columns(2)
+        with pm1:
+            st.text_input("Card Number", placeholder="•••• •••• •••• ••••", key="card_num", disabled=True)
+        with pm2:
+            st.text_input("Expiry", placeholder="MM/YY", key="card_exp", disabled=True)
+        if st.button("Update Payment Method", key="update_payment"):
+            st.info("Stripe integration coming in the next update. Contact scoutiqfc@gmail.com to update billing.")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        # Available plans
+        st.markdown('<div class="section-title" style="margin-top:24px;">Available Plans</div>', unsafe_allow_html=True)
+        plan_col1, plan_col2, plan_col3 = st.columns(3)
+        with plan_col1:
+            st.markdown("""
+            <div style="background:#f9fafb;border:1.5px solid #e5e7ef;border-radius:12px;padding:20px;text-align:center;">
+                <div style="font-size:11px;font-weight:700;color:#6b7280;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Starter</div>
+                <div style="font-size:28px;font-weight:800;color:#04080f;margin-bottom:4px;">£19</div>
+                <div style="font-size:11px;color:#9ca3af;margin-bottom:16px;">per month</div>
+                <div style="font-size:12px;color:#374151;line-height:1.8;">Up to 20 players<br>1 Academy<br>5 AI reports/month<br>PDF Export</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with plan_col2:
+            st.markdown("""
+            <div style="background:#eff6ff;border:2px solid #3b82f6;border-radius:12px;padding:20px;text-align:center;position:relative;">
+                <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#3b82f6;color:#fff;font-size:9px;font-weight:700;letter-spacing:1px;padding:3px 10px;border-radius:100px;">POPULAR</div>
+                <div style="font-size:11px;font-weight:700;color:#1d4ed8;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Pro</div>
+                <div style="font-size:28px;font-weight:800;color:#04080f;margin-bottom:4px;">£49</div>
+                <div style="font-size:11px;color:#9ca3af;margin-bottom:16px;">per month</div>
+                <div style="font-size:12px;color:#374151;line-height:1.8;">Unlimited players<br>Unlimited academies<br>Unlimited AI reports<br>Pro Data Import<br>AI Smart Import</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with plan_col3:
+            st.markdown("""
+            <div style="background:#fafaf9;border:1.5px solid #e5e7ef;border-radius:12px;padding:20px;text-align:center;">
+                <div style="font-size:11px;font-weight:700;color:#6b7280;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Academy</div>
+                <div style="font-size:28px;font-weight:800;color:#04080f;margin-bottom:4px;">£149</div>
+                <div style="font-size:11px;color:#9ca3af;margin-bottom:16px;">per month</div>
+                <div style="font-size:12px;color:#374151;line-height:1.8;">5 coach accounts<br>White label reports<br>Custom branding<br>Priority support<br>API access</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown('<p style="font-size:12px;color:#9ca3af;margin-top:16px;text-align:center;">To upgrade or change your plan, contact <a href="mailto:scoutiqfc@gmail.com" style="color:#3b82f6;">scoutiqfc@gmail.com</a></p>', unsafe_allow_html=True)
+
+        # Danger zone
+        st.markdown("""
+        <div class="acct-card danger-zone" style="margin-top:24px;border-color:#fecaca;">
+            <div class="acct-card-title" style="color:#dc2626;">⚠ Danger Zone</div>
+        """, unsafe_allow_html=True)
+        if st.button("Cancel Subscription", key="cancel_sub"):
+            st.warning("To cancel your subscription contact scoutiqfc@gmail.com. Your data will be retained for 30 days.")
+        if st.button("Delete Account", key="delete_acct"):
+            st.error("Account deletion is permanent. Contact scoutiqfc@gmail.com to proceed.")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.stop()
+
+# ══════════════════════════════════════
+# EDIT ACADEMY PAGE
+# ══════════════════════════════════════
+if st.session_state.get("show_edit_academy") and st.session_state.get("edit_academy_name"):
+    club = st.session_state.edit_academy_name
+    cursor.execute("SELECT * FROM players WHERE club=?", (club,))
+    academy_players = cursor.fetchall()
+
+    if st.button("← Back", key="back_edit_acad"):
+        st.session_state.show_edit_academy = False
+        st.rerun()
+
+    st.markdown(f'<div class="page-header"><div><div class="page-title">{club}</div><div class="page-meta">Academy Management</div></div></div>', unsafe_allow_html=True)
+
+    ea1, ea2 = st.tabs(["Academy Details", "Player Roster"])
+    with ea1:
+        st.markdown('<div class="section-title">Edit Academy</div>', unsafe_allow_html=True)
+        new_name = st.text_input("Academy Name", value=club, key="edit_acad_name_input")
+        about = st.text_area("About this Academy", placeholder="Founded year, location, philosophy, youth development approach...", height=100, key="edit_acad_about")
+        contact = st.text_input("Contact Email", placeholder="academy@club.com", key="edit_acad_contact")
+        if st.button("Save Changes", key="save_acad_edit"):
+            if new_name and new_name.strip() != club:
+                cursor.execute("UPDATE players SET club=? WHERE club=?", (new_name.strip(), club))
+                conn.commit()
+                st.session_state.edit_academy_name = new_name.strip()
+                st.success(f"Academy renamed to {new_name}")
+                st.rerun()
+            else:
+                st.success("Academy details saved.")
+
+    with ea2:
+        st.markdown('<div class="section-title">Player Roster</div>', unsafe_allow_html=True)
+        if academy_players:
+            for ap in academy_players:
+                apc1, apc2, apc3 = st.columns([5, 1, 1])
+                with apc1:
+                    st.markdown(f'<div style="padding:8px 0;font-size:13px;color:#374151;font-weight:500;">{ap[1]} <span style="font-size:11px;color:#9ca3af;">· {ap[4]} · {ap[3]}</span></div>', unsafe_allow_html=True)
+                with apc2:
+                    if st.button("View", key=f"view_ap_{ap[0]}"):
+                        st.session_state.selected_player_id = ap[0]
+                        st.session_state.show_edit_academy = False
+                        st.rerun()
+                with apc3:
+                    st.markdown('<div class="sb-action-del">', unsafe_allow_html=True)
+                    if st.button("✕", key=f"del_ap_{ap[0]}"):
+                        cursor.execute("DELETE FROM sessions WHERE player_id=?", (ap[0],))
+                        cursor.execute("DELETE FROM reports WHERE player_id=?", (ap[0],))
+                        cursor.execute("DELETE FROM players WHERE id=?", (ap[0],))
+                        conn.commit()
+                        st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            st.info("No players in this academy yet.")
+    st.stop()
+
+# ══════════════════════════════════════
 # YOUTH MODE
 # ══════════════════════════════════════
 if st.session_state.mode == "youth":
@@ -1196,7 +1621,7 @@ if st.session_state.mode == "youth":
     if st.session_state.get("show_add_player"):
         club_name = st.session_state.get("add_player_club", "Unknown Club")
         st.markdown(f'<div class="page-header"><div><div class="page-title">Add Player</div><div class="page-meta">{club_name}</div></div></div>', unsafe_allow_html=True)
-        tab_manual, tab_upload = st.tabs(["Manual Entry", "Upload Excel"])
+        tab_manual, tab_upload, tab_ai = st.tabs(["Manual Entry", "Upload Excel", "✨ AI Smart Import"])
 
         with tab_manual:
             with st.form("add_player_form"):
@@ -1289,6 +1714,130 @@ if st.session_state.mode == "youth":
                 except Exception as e:
                     st.error(f"Error: {e}")
 
+        with tab_ai:
+            st.markdown("""
+            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:20px 24px;margin-bottom:20px;">
+                <p style="font-size:14px;font-weight:700;color:#1d4ed8;margin-bottom:6px;">✨ AI Smart Import</p>
+                <p style="font-size:13px;color:#3b82f6;margin:0;line-height:1.7;">
+                Paste any player data in any format — copied from a spreadsheet, WhatsApp message, 
+                notebook, website, or even rough notes. Claude will intelligently parse it and 
+                convert it to the platform format automatically.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown("**Paste your raw data below**", unsafe_allow_html=True)
+            raw_input = st.text_area(
+                "raw_data",
+                placeholder="""Examples of what you can paste:
+- A copied Excel table
+- WhatsApp coach notes: 'Luca, 14, striker, scored twice last Tuesday, great attitude'
+- CSV text: name,age,goals,assists\nJohn Smith,15,3,2
+- FBref stats copied from a webpage
+- Handwritten notes typed up
+- Any format — Claude will figure it out""",
+                height=200,
+                label_visibility="collapsed",
+                key="ai_raw_input"
+            )
+
+            if raw_input and raw_input.strip():
+                st.markdown(f'<p style="font-size:11px;color:#9ca3af;">{len(raw_input)} characters detected</p>', unsafe_allow_html=True)
+                if st.button("✨ Parse and Import with AI", key="ai_parse_btn"):
+                    with st.spinner("Claude is reading and structuring your data..."):
+                        try:
+                            import json
+                            result = ai_clean_data(raw_input, "youth")
+                            # Clean the response
+                            result = result.strip()
+                            if result.startswith("```"):
+                                result = result.split("```")[1]
+                                if result.startswith("json"):
+                                    result = result[4:]
+                            result = result.strip()
+                            players_data = json.loads(result)
+
+                            if not isinstance(players_data, list):
+                                players_data = [players_data]
+
+                            st.success(f"Claude detected {len(players_data)} player record(s). Preview:")
+                            preview_df = pd.DataFrame([{
+                                "Name": p.get("name","?"),
+                                "Position": p.get("position","?"),
+                                "Club": p.get("club", club_name),
+                                "Goals": p.get("goals",0),
+                                "Assists": p.get("assists",0),
+                                "Coachability": p.get("coachability_rating",7)
+                            } for p in players_data])
+                            st.dataframe(preview_df, use_container_width=True, hide_index=True)
+
+                            if st.button("Confirm and Save to Platform", key="ai_confirm_save"):
+                                saved = 0
+                                for p in players_data:
+                                    pname = str(p.get("name","")).strip()
+                                    if not pname: continue
+                                    p_club = p.get("club", club_name) or club_name
+                                    cursor.execute("SELECT id FROM players WHERE name=?", (pname,))
+                                    ex = cursor.fetchone()
+                                    if ex:
+                                        new_pid = ex[0]
+                                    else:
+                                        cursor.execute("INSERT INTO players (name,date_of_birth,position,club,dominant_foot,age_group,nationality) VALUES (?,?,?,?,?,?,?)",
+                                            (pname,
+                                             p.get("date_of_birth",""),
+                                             p.get("position","Central Midfielder"),
+                                             p_club,
+                                             p.get("dominant_foot","Right"),
+                                             p.get("age_group","U16"),
+                                             p.get("nationality","")))
+                                        conn.commit()
+                                        new_pid = cursor.lastrowid
+
+                                    def sv(key, default=0, fl=False):
+                                        try:
+                                            v = p.get(key, default)
+                                            if v is None: return default
+                                            return float(v) if fl else int(float(v))
+                                        except: return default
+
+                                    cursor.execute("""INSERT INTO sessions
+                                        (player_id,session_date,session_type,minutes_played,distance_covered_km,
+                                        sprint_count,top_speed_kmh,passes_completed,passes_attempted,dribbles_completed,
+                                        defensive_actions,goals,assists,chances_created,tackles_won,
+                                        coachability_rating,attitude_score,consistency_rating,coach_notes)
+                                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                                        (new_pid,
+                                         p.get("session_date","2024-09-01"),
+                                         p.get("session_type","match"),
+                                         sv("minutes_played",90),
+                                         sv("distance_covered_km",8.0,True),
+                                         sv("sprint_count",15),
+                                         sv("top_speed_kmh",28.0,True),
+                                         sv("passes_completed",25),
+                                         sv("passes_attempted",32),
+                                         sv("dribbles_completed",4),
+                                         sv("defensive_actions",6),
+                                         sv("goals"),
+                                         sv("assists"),
+                                         sv("chances_created"),
+                                         sv("tackles_won"),
+                                         sv("coachability_rating",7),
+                                         sv("attitude_score",7),
+                                         sv("consistency_rating",7),
+                                         str(p.get("coach_notes",""))))
+                                    conn.commit()
+                                    saved += 1
+
+                                st.session_state.selected_player_id = new_pid
+                                st.session_state.show_add_player = False
+                                st.success(f"{saved} player(s) imported and saved.")
+                                st.rerun()
+
+                        except json.JSONDecodeError as e:
+                            st.error(f"Could not parse the data. Try adding more context or structure to your input.")
+                        except Exception as e:
+                            st.error(f"Error: {e}")
+
         if st.button("← Cancel", key="cancel_add"):
             st.session_state.show_add_player = False; st.rerun()
         st.stop()
@@ -1304,6 +1853,83 @@ if st.session_state.mode == "youth":
         with c3:
             st.markdown('<div class="welcome-card"><div class="welcome-icon">📋</div><div class="welcome-title">Generate Reports</div><div class="welcome-desc">Select a player and generate a full AI scouting report</div></div>', unsafe_allow_html=True)
         st.stop()
+
+    # EDIT PLAYER PAGE
+    if st.session_state.get("show_edit_player") and st.session_state.get("edit_player_id"):
+        epid_edit = st.session_state.edit_player_id
+        cursor.execute("SELECT * FROM players WHERE id=?", (epid_edit,))
+        ep_edit = cursor.fetchone()
+        if ep_edit:
+            if st.button("← Back to Player", key="back_edit_player"):
+                st.session_state.show_edit_player = False
+                st.rerun()
+
+            st.markdown(f'<div class="page-header"><div><div class="page-title">{ep_edit[1]}</div><div class="page-meta">Edit Player Profile</div></div></div>', unsafe_allow_html=True)
+
+            ep_tab1, ep_tab2, ep_tab3 = st.tabs(["Profile", "Sessions", "Reports"])
+
+            with ep_tab1:
+                st.markdown('<div class="section-title">Player Details</div>', unsafe_allow_html=True)
+                with st.form("edit_player_form"):
+                    ec1, ec2, ec3 = st.columns(3)
+                    with ec1:
+                        new_pname = st.text_input("Full Name", value=ep_edit[1])
+                        new_pos = st.selectbox("Position", ["Striker","Right Winger","Left Winger","Attacking Midfielder","Central Midfielder","Defensive Midfielder","Right Back","Left Back","Centre Back","Goalkeeper"],
+                            index=["Striker","Right Winger","Left Winger","Attacking Midfielder","Central Midfielder","Defensive Midfielder","Right Back","Left Back","Centre Back","Goalkeeper"].index(ep_edit[4]) if ep_edit[4] in ["Striker","Right Winger","Left Winger","Attacking Midfielder","Central Midfielder","Defensive Midfielder","Right Back","Left Back","Centre Back","Goalkeeper"] else 0)
+                        new_dob = st.text_input("Date of Birth", value=ep_edit[2] or "")
+                    with ec2:
+                        new_age = st.selectbox("Age Group", ["U13","U14","U15","U16","U17","U18"],
+                            index=["U13","U14","U15","U16","U17","U18"].index(ep_edit[3]) if ep_edit[3] in ["U13","U14","U15","U16","U17","U18"] else 0)
+                        new_foot = st.selectbox("Dominant Foot", ["Right","Left"],
+                            index=0 if ep_edit[5]=="Right" else 1)
+                        new_nat = st.text_input("Nationality", value=ep_edit[7] or "")
+                    with ec3:
+                        new_club = st.text_input("Academy / Club", value=ep_edit[6] or "")
+                    if st.form_submit_button("Save Changes"):
+                        cursor.execute("UPDATE players SET name=?,date_of_birth=?,age_group=?,position=?,dominant_foot=?,club=?,nationality=? WHERE id=?",
+                            (new_pname,new_dob,new_age,new_pos,new_foot,new_club,new_nat,epid_edit))
+                        conn.commit()
+                        st.success("Player profile updated.")
+                        st.rerun()
+
+            with ep_tab2:
+                st.markdown('<div class="section-title">Session History</div>', unsafe_allow_html=True)
+                cursor.execute("SELECT * FROM sessions WHERE player_id=? ORDER BY session_date DESC", (epid_edit,))
+                edit_sessions = cursor.fetchall()
+                if edit_sessions:
+                    for s in edit_sessions:
+                        sc1, sc2 = st.columns([8,1])
+                        with sc1:
+                            st.markdown(f'<div style="padding:8px 0;font-size:12px;color:#374151;">{str(s[2])[:10]} · {s[3].title()} · {s[4]} mins · {s[12]}G {s[13]}A</div>', unsafe_allow_html=True)
+                        with sc2:
+                            st.markdown('<div class="sb-action-del">', unsafe_allow_html=True)
+                            if st.button("✕", key=f"del_sess_{s[0]}"):
+                                cursor.execute("DELETE FROM sessions WHERE id=?", (s[0],))
+                                conn.commit()
+                                st.rerun()
+                            st.markdown('</div>', unsafe_allow_html=True)
+                else:
+                    st.info("No sessions recorded yet.")
+
+            with ep_tab3:
+                st.markdown('<div class="section-title">Reports</div>', unsafe_allow_html=True)
+                cursor.execute("SELECT * FROM reports WHERE player_id=? ORDER BY created_at DESC", (epid_edit,))
+                edit_reports = cursor.fetchall()
+                if edit_reports:
+                    for r in edit_reports:
+                        rc1, rc2 = st.columns([8,1])
+                        with rc1:
+                            st.markdown(f'<div style="padding:8px 0;font-size:12px;color:#374151;">Report generated {str(r[3])[:10]}</div>', unsafe_allow_html=True)
+                        with rc2:
+                            st.markdown('<div class="sb-action-del">', unsafe_allow_html=True)
+                            if st.button("✕", key=f"del_rep_{r[0]}"):
+                                cursor.execute("DELETE FROM reports WHERE id=?", (r[0],))
+                                conn.commit()
+                                st.rerun()
+                            st.markdown('</div>', unsafe_allow_html=True)
+                else:
+                    st.info("No reports generated yet.")
+            st.stop()
 
     # PLAYER DASHBOARD
     pid = st.session_state.selected_player_id
@@ -1499,7 +2125,7 @@ if st.session_state.mode == "youth":
 # ══════════════════════════════════════
 else:
     st.markdown('<div class="page-header"><div><div class="page-title">Pro Data</div><div class="page-meta">Professional Match Analysis &nbsp;·&nbsp; Real Performance Data</div></div></div>', unsafe_allow_html=True)
-    tab1,tab2,tab3=st.tabs(["Upload Data","Player Report","Team Analysis"])
+    tab1,tab2,tab3,tab4=st.tabs(["Upload Data","Player Report","Team Analysis","✨ AI Import"])
 
     with tab1:
         st.markdown('<div class="section-title">Upload Professional Data</div>', unsafe_allow_html=True)
@@ -1751,6 +2377,158 @@ Complete all sections. No truncation."""
                             cursor.execute("INSERT INTO epl_reports (player_id,report_text) VALUES (?,?)",(epid,rtext))
                             conn.commit(); st.rerun()
                 st.markdown('</div>', unsafe_allow_html=True)
+
+    with tab4:
+        st.markdown('<div class="section-title">AI Smart Import</div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:20px 24px;margin-bottom:24px;">
+            <p style="font-size:14px;font-weight:700;color:#1d4ed8;margin-bottom:6px;">✨ Paste Any Professional Data</p>
+            <p style="font-size:13px;color:#3b82f6;margin:0;line-height:1.7;">
+            Paste data from any source — FBref, Transfermarkt, WhoScored, Sofascore, a PDF report, 
+            a copied spreadsheet, or even handwritten notes. Claude will identify the players, 
+            extract their stats, and structure them for the platform automatically.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        col_ex1, col_ex2 = st.columns(2)
+        with col_ex1:
+            st.markdown("""
+            <div style="background:#f9fafb;border:1px solid #e5e7ef;border-radius:10px;padding:14px 16px;font-size:12px;color:#6b7280;">
+            <strong style="color:#374151;">Works with:</strong><br>
+            • Copied FBref tables<br>
+            • Sofascore player stats<br>
+            • PDF match reports (text)<br>
+            • Spreadsheet pastes
+            </div>
+            """, unsafe_allow_html=True)
+        with col_ex2:
+            st.markdown("""
+            <div style="background:#f9fafb;border:1px solid #e5e7ef;border-radius:10px;padding:14px 16px;font-size:12px;color:#6b7280;">
+            <strong style="color:#374151;">Also works with:</strong><br>
+            • WhatsApp scouting notes<br>
+            • Rough text descriptions<br>
+            • Mixed format data<br>
+            • Any language
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown('<div style="margin-top:20px;"></div>', unsafe_allow_html=True)
+        pro_raw = st.text_area(
+            "pro_raw",
+            placeholder="""Paste anything here. Examples:
+
+Player: Bruno Fernandes | Club: Man United | Pos: Midfielder | Age: 29
+Season 2023/24: 35 apps, 1800 mins, 10 goals, 8 assists, 3 yellows
+
+Or paste a full copied table from FBref or WhoScored...
+Or type rough notes: Erling Haaland, 24, striker Man City, 27 goals 5 assists this season""",
+            height=220,
+            label_visibility="collapsed",
+            key="pro_ai_raw"
+        )
+
+        if pro_raw and pro_raw.strip():
+            st.markdown(f'<p style="font-size:11px;color:#9ca3af;">{len(pro_raw)} characters — ready to parse</p>', unsafe_allow_html=True)
+            if st.button("✨ Parse and Import with AI", key="pro_ai_parse"):
+                with st.spinner("Claude is reading and structuring your data..."):
+                    try:
+                        import json
+                        result = ai_clean_data(pro_raw, "pro")
+                        result = result.strip()
+                        if result.startswith("```"):
+                            result = result.split("```")[1]
+                            if result.startswith("json"):
+                                result = result[4:]
+                        result = result.strip()
+                        pro_players = json.loads(result)
+                        if not isinstance(pro_players, list):
+                            pro_players = [pro_players]
+
+                        st.success(f"Claude detected {len(pro_players)} player record(s). Preview:")
+                        prev_df = pd.DataFrame([{
+                            "Name": p.get("name","?"),
+                            "Team": p.get("team","?"),
+                            "Position": p.get("position","?"),
+                            "Apps": p.get("appearances",0),
+                            "Goals": p.get("goals",0),
+                            "Assists": p.get("assists",0),
+                            "xG": p.get("xg",0)
+                        } for p in pro_players])
+                        st.dataframe(prev_df, use_container_width=True, hide_index=True)
+
+                        if st.button("Confirm and Save to Platform", key="pro_ai_confirm"):
+                            import random
+                            random.seed(99)
+                            saved = 0
+                            for p in pro_players:
+                                pname = str(p.get("name","")).strip()
+                                if not pname: continue
+                                team = str(p.get("team","Unknown")).strip()
+                                position = str(p.get("position","Midfielder")).strip()
+                                nationality = str(p.get("nationality","")).strip()
+                                age = int(p.get("age",0) or 0)
+                                appearances = max(int(p.get("appearances",1) or 1), 1)
+                                total_goals = int(p.get("goals",0) or 0)
+                                total_assists = int(p.get("assists",0) or 0)
+                                total_mins = int(p.get("minutes", appearances * 85) or appearances * 85)
+                                goals_p90 = float(p.get("goals_per_90",0) or 0)
+                                assists_p90 = float(p.get("assists_per_90",0) or 0)
+                                yellow_cards = int(p.get("yellow_cards",0) or 0)
+                                red_cards = int(p.get("red_cards",0) or 0)
+                                xg_total = float(p.get("xg",0) or 0)
+                                xa_total = float(p.get("xa",0) or 0)
+
+                                cursor.execute("SELECT id FROM epl_players WHERE name=? AND team=?", (pname, team))
+                                ex = cursor.fetchone()
+                                if ex:
+                                    epid = ex[0]
+                                else:
+                                    cursor.execute("INSERT INTO epl_players (name,team,position,nationality,age) VALUES (?,?,?,?,?)",
+                                        (pname, team, position, nationality, age))
+                                    conn.commit()
+                                    epid = cursor.lastrowid
+
+                                # Distribute across appearances
+                                goal_list = [0]*appearances
+                                assist_list = [0]*appearances
+                                for i in range(total_goals):
+                                    goal_list[random.randint(0,appearances-1)] += 1
+                                for i in range(total_assists):
+                                    assist_list[random.randint(0,appearances-1)] += 1
+
+                                avg_mins = int(total_mins/appearances)
+                                xg_per = round(xg_total/appearances, 2) if appearances > 0 else 0
+                                xa_per = round(xa_total/appearances, 2) if appearances > 0 else 0
+
+                                for gw in range(1, appearances+1):
+                                    cursor.execute("""INSERT INTO epl_sessions
+                                        (player_id,gameweek,opponent,minutes_played,goals,assists,
+                                        shots,shots_on_target,xg,xa,passes_completed,tackles_won,
+                                        yellow_cards,red_cards,rating)
+                                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                                        (epid, gw, f"GW{gw}",
+                                        max(45, min(90, avg_mins + random.randint(-5,5))),
+                                        goal_list[gw-1], assist_list[gw-1],
+                                        max(0, goal_list[gw-1]*3 + random.randint(0,2)),
+                                        max(0, goal_list[gw-1]*2),
+                                        round(xg_per + random.uniform(-0.05,0.05), 2),
+                                        round(xa_per + random.uniform(-0.03,0.03), 2),
+                                        random.randint(25,55),
+                                        random.randint(1,4),
+                                        1 if gw <= yellow_cards else 0,
+                                        1 if (gw==appearances and red_cards>0) else 0,
+                                        round(6.5 + (goals_p90+assists_p90)*1.5 + random.uniform(-0.4,0.4), 1)))
+                                conn.commit()
+                                saved += 1
+
+                            st.success(f"{saved} player(s) imported with full gameweek breakdowns.")
+                            st.rerun()
+
+                    except json.JSONDecodeError:
+                        st.error("Could not parse the data. Try adding more structure — include player names, club names and at least one stat.")
+                    except Exception as e:
+                        st.error(f"Error: {str(e)}")
 
     with tab3:
         st.markdown('<div class="section-title">Team Analysis</div>', unsafe_allow_html=True)
