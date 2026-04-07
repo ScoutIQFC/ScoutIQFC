@@ -1308,6 +1308,12 @@ with st.sidebar:
 
     st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
     st.markdown(f'<div class="sb-meta">Scout IQ·FC v1.0 Beta<br>{len(players)} Players · {len(epl_teams)} Pro Teams</div>', unsafe_allow_html=True)
+    # Account + Sign Out buttons at bottom of sidebar
+    st.markdown('<div style="padding:4px 16px 4px;">', unsafe_allow_html=True)
+    if st.button("⚙  Account & Settings", key="open_account", use_container_width=True):
+        st.session_state.show_account = not st.session_state.get("show_account", False)
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
     st.markdown('<div class="signout-wrap">', unsafe_allow_html=True)
     if st.button("Sign Out", key="signout", use_container_width=True):
         st.session_state["authenticated"] = False
@@ -1323,44 +1329,10 @@ account_type = st.session_state.get("account_type", "admin")
 badge_color = "#f5c842" if account_type == "admin" else "#3b82f6"
 badge_label = "Admin" if account_type == "admin" else "Beta"
 
-# Inject account button top right
-st.markdown(f"""
-<style>
-.account-btn-wrap {{
-    position: fixed; top: 12px; right: 16px; z-index: 9999;
-    display: flex; align-items: center; gap: 8px;
-}}
-.account-badge {{
-    background: {badge_color}22;
-    border: 1px solid {badge_color}44;
-    color: {badge_color};
-    font-size: 9px; font-weight: 700; letter-spacing: 2px;
-    text-transform: uppercase;
-    padding: 3px 8px; border-radius: 100px;
-}}
-.account-avatar {{
-    width: 32px; height: 32px;
-    background: linear-gradient(135deg, #1a3a8a, #0f1f5c);
-    border: 2px solid rgba(245,200,66,0.3);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12px; font-weight: 700; color: #f5c842;
-    cursor: pointer;
-}}
-</style>
-<div class="account-btn-wrap">
-    <span class="account-badge">{badge_label}</span>
-</div>
-""", unsafe_allow_html=True)
+# Badge CSS only - no HTML injection that could fail before variables exist
 
-# Account button in a fixed position
-acct_col1, acct_col2, acct_col3 = st.columns([8, 1, 1])
-with acct_col3:
-    st.markdown('<div style="position:fixed;top:8px;right:60px;z-index:9999;">', unsafe_allow_html=True)
-    if st.button("⚙", key="open_account"):
-        st.session_state.show_account = not st.session_state.get("show_account", False)
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+# Account button - inject via sidebar bottom
+# (Top-level columns break layout, use sidebar button instead)
 
 # ══════════════════════════════════════
 # ACCOUNT / SETTINGS PAGE
