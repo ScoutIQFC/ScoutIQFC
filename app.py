@@ -349,11 +349,15 @@ html, body, [class*="css"] { background: #f8f9fc !important; color: #0d1117; }
 .stApp { background: #f8f9fc !important; }
 .block-container { padding: 0 2rem 2rem 2rem !important; max-width: 100% !important; }
 
-/* ── SIDEBAR - STATIC, ALWAYS VISIBLE ── */
-[data-testid="stSidebarCollapseButton"],
+/* ── SIDEBAR ── */
+[data-testid="stSidebarCollapseButton"] { display: none !important; }
 [data-testid="collapsedControl"] { display: none !important; }
 [data-testid="stSidebar"] {
-    min-width: 260px !important; max-width: 260px !important;
+    transform: none !important;
+    display: flex !important;
+    visibility: visible !important;
+    min-width: 260px !important;
+    max-width: 260px !important;
     background: #04080f !important;
     box-shadow: 1px 0 0 rgba(255,255,255,0.04), 4px 0 32px rgba(0,0,0,0.4) !important;
 }
