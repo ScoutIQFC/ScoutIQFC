@@ -350,26 +350,61 @@ html, body, [class*="css"] { background: #f8f9fc !important; color: #0d1117; }
 .block-container { padding: 0 2rem 2rem 2rem !important; max-width: 100% !important; }
 
 /* ── SIDEBAR ── */
+/* Collapse button - clean arrow only */
 [data-testid="stSidebarCollapseButton"] {
     display: flex !important; visibility: visible !important;
-    background: rgba(255,255,255,0.08) !important;
-    border: 1px solid rgba(255,255,255,0.12) !important;
-    border-radius: 6px !important; cursor: pointer !important;
-    width: 26px !important; height: 26px !important;
+    background: transparent !important;
+    border: none !important; outline: none !important;
+    box-shadow: none !important;
+    width: 28px !important; height: 28px !important;
     align-items: center !important; justify-content: center !important;
-    position: absolute !important; top: 12px !important; right: 8px !important; z-index: 999 !important;
+    cursor: pointer !important;
+    opacity: 0.6 !important;
+    transition: opacity 0.2s !important;
 }
-[data-testid="stSidebarCollapseButton"]:hover{background:rgba(255,255,255,0.16) !important;}
-[data-testid="stSidebarCollapseButton"] svg{color:rgba(255,255,255,0.6) !important;width:14px !important;height:14px !important;}
-[data-testid="collapsedControl"]{display:flex !important;visibility:visible !important;}
-[data-testid="stSidebar"]{
-    min-width:260px !important; max-width:260px !important;
-    background:#04080f !important;
-    box-shadow:2px 0 24px rgba(0,0,0,0.4) !important;
-    transition:min-width 0.25s ease,max-width 0.25s ease !important;
+[data-testid="stSidebarCollapseButton"]:hover { opacity: 1 !important; }
+[data-testeid="stSidebarCollapseButton"] p { display: none !important; }
+[data-testid="stSidebarCollapseButton"] svg {
+    color: #ffffff !important;
+    width: 16px !important; height: 16px !important;
 }
-[data-testid="stSidebar"][aria-expanded="false"]{min-width:0 !important;max-width:0 !important;}
-[data-testid="stSidebar"] > div{padding:0 !important;overflow-y:auto !important;max-height:100vh !important;}
+
+/* Collapsed control - the reopen arrow - make it visible and blue */
+[data-testid="collapsedControl"] {
+    display: flex !important; visibility: visible !important;
+    position: fixed !important; left: 0 !important; top: 50% !important;
+    transform: translateY(-50%) !important; z-index: 99999 !important;
+    background: #1a3a8a !important;
+    border-radius: 0 8px 8px 0 !important;
+    width: 24px !important; height: 48px !important;
+    align-items: center !important; justify-content: center !important;
+    cursor: pointer !important;
+    box-shadow: 2px 0 12px rgba(26,58,138,0.4) !important;
+    transition: background 0.2s, width 0.2s !important;
+}
+[data-testid="collapsedControl"]:hover {
+    background: #2d5acd !important;
+    width: 28px !important;
+}
+[data-testid="collapsedControl"] svg {
+    color: #ffffff !important;
+    width: 14px !important; height: 14px !important;
+}
+
+[data-testid="stSidebar"] {
+    min-width: 260px !important; max-width: 260px !important;
+    background: #04080f !important;
+    box-shadow: 2px 0 24px rgba(0,0,0,0.4) !important;
+    transition: all 0.25s ease !important;
+}
+[data-testid="stSidebar"][aria-expanded="false"] {
+    min-width: 0px !important; max-width: 0px !important;
+}
+[data-testid="stSidebar"] > div {
+    padding: 0 !important;
+    overflow-y: auto !important;
+    max-height: 100vh !important;
+}
 
 /* Sidebar logo */
 .sb-logo {
@@ -778,23 +813,49 @@ html, body, [class*="css"] { background: #f8f9fc !important; color: #0d1117; }
 
 div[role="radiogroup"] { display: none; }
 
-/* ── FILE UPLOADER - clean, no ugly default ── */
+/* ── FILE UPLOADER - minimal clean ── */
+[data-testid="stFileUploader"] {
+    width: 100% !important;
+}
 [data-testid="stFileUploader"] section {
     background: #f8f9fc !important;
-    border: 2px dashed #e5e7ef !important;
-    border-radius: 12px !important;
-    padding: 16px !important;
+    border: 1.5px dashed #d1d5db !important;
+    border-radius: 10px !important;
+    padding: 12px 16px !important;
+    min-height: 0 !important;
 }
-[data-testid="stFileUploader"] section:hover { border-color: #1a3a8a !important; }
-[data-testid="stFileUploader"] section p { font-size: 12px !important; color: #9ca3af !important; }
-[data-testid="stFileUploaderDropzone"] button {
-    background: #04080f !important; color: #fff !important;
-    border: none !important; border-radius: 8px !important;
-    font-size: 11px !important; font-weight: 700 !important;
-    padding: 7px 18px !important; cursor: pointer !important;
+[data-testid="stFileUploader"] section:hover {
+    border-color: #1a3a8a !important;
+    background: #f0f4ff !important;
+}
+/* Hide the verbose drag-and-drop text */
+[data-testid="stFileUploaderDropzoneInstructions"] {
+    display: none !important;
+}
+/* The browse button */
+[data-testid="stFileUploaderDropzone"] button,
+[data-testid="baseButton-secondary"] {
+    background: #04080f !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 100px !important;
     font-family: 'Outfit', sans-serif !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    padding: 7px 20px !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+    width: auto !important;
+    display: inline-block !important;
 }
-[data-testid="stFileUploaderDropzone"] button:hover { background: #1a3a8a !important; }
+[data-testid="stFileUploaderDropzone"] button:hover {
+    background: #1a3a8a !important;
+}
+/* Uploaded file name display */
+[data-testid="stFileUploader"] [data-testid="stMarkdownContainer"] p {
+    font-size: 11px !important;
+    color: #6b7280 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -1245,7 +1306,7 @@ for k,v in {
     "expanded_clubs": [], "expanded_epl_teams": [],
     "selected_epl_player_id": None, "mode": "youth",
     "show_add_player": False, "show_add_academy": False, "selected_academy": None,
-    "add_player_club": None
+    "add_player_club": None, "show_ai_import_academy": None, "ai_parsed_players": None
 }.items():
     if k not in st.session_state: st.session_state[k] = v
 
@@ -1924,17 +1985,107 @@ if st.session_state.mode == "youth":
                 st.plotly_chart(fig, use_container_width=True)
 
         # Player roster
-        roster_c1, roster_c2 = st.columns([5,1])
-        with roster_c1:
+        # Academy actions row
+        aa1, aa2, aa3 = st.columns([3, 1, 1])
+        with aa1:
             st.markdown('<div class="section-title">Player Roster</div>', unsafe_allow_html=True)
-        with roster_c2:
-            st.markdown('<div style="padding-top:28px;">', unsafe_allow_html=True)
-            if st.button("＋ Add Player", key="add_from_acad_lp"):
+        with aa2:
+            st.markdown('<div style="padding-top:24px;">', unsafe_allow_html=True)
+            if st.button("＋ Add Player", key="add_from_acad_lp", use_container_width=True):
                 st.session_state.show_add_player = True
                 st.session_state.add_player_club = club
                 st.session_state.selected_academy = None
                 st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
+        with aa3:
+            st.markdown('<div style="padding-top:24px;">', unsafe_allow_html=True)
+            if st.button("✨ AI Import", key="ai_import_acad", use_container_width=True):
+                st.session_state.show_ai_import_academy = club
+                st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        # AI Import panel for academy
+        if st.session_state.get("show_ai_import_academy") == club:
+            with st.expander("✨ AI Smart Import — Upload or paste any data", expanded=True):
+                st.markdown('<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#1d4ed8;">Upload a photo, PDF, Word doc, Excel, or just type notes. Claude will extract all player data automatically.</div>', unsafe_allow_html=True)
+                ai_acad_file = st.file_uploader("Upload file", type=["jpg","jpeg","png","pdf","docx","xlsx","csv","txt"], key=f"ai_acad_file_{club}", label_visibility="collapsed")
+                ai_acad_text = st.text_area("Or paste / type any player data", placeholder="Type naturally e.g: Marcus 15 striker scored 2 goals, great attitude. Or paste any table or match notes.", height=100, key=f"ai_acad_text_{club}", label_visibility="collapsed")
+
+                parse_col, close_col = st.columns([1, 4])
+                with parse_col:
+                    parse_btn = st.button("✨ Parse", key=f"ai_acad_parse_{club}")
+                with close_col:
+                    if st.button("✕ Close", key=f"ai_acad_close_{club}"):
+                        st.session_state.show_ai_import_academy = None; st.rerun()
+
+                if parse_btn:
+                    input_text = ai_acad_text.strip() if ai_acad_text else ""
+                    with st.spinner("Claude is reading your data..."):
+                        try:
+                            import json
+                            if ai_acad_file:
+                                file_bytes = ai_acad_file.read()
+                                ext = ai_acad_file.name.split(".")[-1].lower()
+                                if ext in ["jpg","jpeg","png","webp"]:
+                                    b64 = base64.standard_b64encode(file_bytes).decode()
+                                    media_map = {"jpg":"image/jpeg","jpeg":"image/jpeg","png":"image/png","webp":"image/webp"}
+                                    cl = anthropic.Anthropic(api_key=get_api_key())
+                                    r = cl.messages.create(model="claude-opus-4-5", max_tokens=2000, messages=[{"role":"user","content":[{"type":"image","source":{"type":"base64","media_type":media_map.get(ext,"image/jpeg"),"data":b64}},{"type":"text","text":"Extract all youth football player data from this image. Return a JSON array where each object has: name, position, goals, assists, minutes_played, coach_notes. Return ONLY valid JSON, no markdown."}]}])
+                                    raw_result = r.content[0].text
+                                elif ext == "docx":
+                                    from docx import Document as _D
+                                    try:
+                                        input_text = "\n".join([p.text for p in _D(io.BytesIO(file_bytes)).paragraphs if p.text.strip()])
+                                    except:
+                                        input_text = file_bytes.decode("utf-8","ignore")[:6000]
+                                elif ext in ["xlsx","xls"]:
+                                    raw_result = ai_clean_data(pd.read_excel(io.BytesIO(file_bytes)).to_string(index=False)[:5000], "youth")
+                                else:
+                                    raw_result = ai_clean_data(file_bytes.decode("utf-8","ignore")[:6000], "youth")
+                            elif input_text:
+                                raw_result = ai_clean_data(input_text, "youth")
+                            else:
+                                st.warning("Upload a file or type some data first."); st.stop()
+
+                            raw_result = raw_result.strip()
+                            if raw_result.startswith("```"):
+                                parts = raw_result.split("```")
+                                raw_result = parts[1][4:] if len(parts) > 1 and parts[1].startswith("json") else (parts[1] if len(parts) > 1 else raw_result)
+                            parsed = json.loads(raw_result.strip())
+                            if not isinstance(parsed, list): parsed = [parsed]
+                            st.session_state[f"ai_acad_parsed_{club}"] = parsed
+                        except Exception as e:
+                            st.error(f"Could not parse: {str(e)[:100]}")
+
+                if st.session_state.get(f"ai_acad_parsed_{club}"):
+                    parsed = st.session_state[f"ai_acad_parsed_{club}"]
+                    st.success(f"Found {len(parsed)} player(s) — confirm to save:")
+                    st.dataframe(pd.DataFrame([{"Name": p.get("name","?"), "Position": p.get("position","?"), "Goals": p.get("goals",0), "Assists": p.get("assists",0)} for p in parsed]), use_container_width=True, hide_index=True)
+                    sv1, sv2 = st.columns([1,4])
+                    with sv1:
+                        if st.button("✅ Save All", key=f"ai_acad_save_{club}"):
+                            saved = 0
+                            for p in parsed:
+                                pname = str(p.get("name","")).strip()
+                                if not pname: continue
+                                cursor.execute("SELECT id FROM players WHERE name=?", (pname,))
+                                ex = cursor.fetchone()
+                                if ex: npid = ex[0]
+                                else:
+                                    cursor.execute("INSERT INTO players (name,date_of_birth,position,club,dominant_foot,age_group,nationality) VALUES (?,?,?,?,?,?,?)", (pname,p.get("date_of_birth",""),p.get("position","Central Midfielder"),club,p.get("dominant_foot","Right"),p.get("age_group","U16"),p.get("nationality","")))
+                                    conn.commit(); npid = cursor.lastrowid
+                                def sv_val(k,d=0,fl=False):
+                                    try:
+                                        v=p.get(k,d); return float(v) if fl else int(float(v)) if v is not None else d
+                                    except: return d
+                                cursor.execute("INSERT INTO sessions (player_id,session_date,session_type,minutes_played,distance_covered_km,sprint_count,top_speed_kmh,passes_completed,passes_attempted,dribbles_completed,defensive_actions,goals,assists,chances_created,tackles_won,coachability_rating,attitude_score,consistency_rating,coach_notes) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (npid,p.get("session_date","2024-09-01"),p.get("session_type","match"),sv_val("minutes_played",90),sv_val("distance_covered_km",8,True),sv_val("sprint_count",15),sv_val("top_speed_kmh",28,True),sv_val("passes_completed",25),sv_val("passes_attempted",32),sv_val("dribbles_completed",4),sv_val("defensive_actions",6),sv_val("goals"),sv_val("assists"),sv_val("chances_created"),sv_val("tackles_won"),sv_val("coachability_rating",7),sv_val("attitude_score",7),sv_val("consistency_rating",7),str(p.get("coach_notes",""))))
+                                conn.commit(); saved += 1
+                            st.session_state[f"ai_acad_parsed_{club}"] = None
+                            st.session_state.show_ai_import_academy = None
+                            st.success(f"{saved} player(s) added to {club}"); st.rerun()
+                    with sv2:
+                        if st.button("✕ Discard", key=f"ai_acad_discard_{club}"):
+                            st.session_state[f"ai_acad_parsed_{club}"] = None; st.rerun()
 
         for i in range(0, len(acad_ps), 3):
             cols = st.columns(3)
