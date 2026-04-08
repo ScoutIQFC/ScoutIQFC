@@ -2107,45 +2107,26 @@ if st.session_state.get("show_account"):
         username = "admin" if is_admin else "admin1"
 
         st.markdown(f"""
-
         <div class="acct-card">
-
             <div class="acct-card-title">👤 Account Information</div>
-
             <div class="acct-row"><span class="acct-label">Username</span><span class="acct-value">{username}</span></div>
-
             <div class="acct-row"><span class="acct-label">Account Type</span><span class="acct-value">{"Administrator" if is_admin else "Beta User"}</span></div>
-
             <div class="acct-row"><span class="acct-label">Plan</span><span><span class="plan-badge {"" if is_admin else "plan-badge-beta"}">{"Pro — Admin" if is_admin else "Beta Access"}</span></span></div>
-
             <div class="acct-row"><span class="acct-label">Status</span><span class="acct-value" style="color:#16a34a;">● Active</span></div>
-
             <div class="acct-row"><span class="acct-label">Platform</span><span class="acct-value">Scout IQ·FC v1.0</span></div>
-
             <div class="acct-row"><span class="acct-label">Data Access</span><span class="acct-value">{"All Academies" if is_admin else "Riverside FC Academy only"}</span></div>
-
         </div>
-
         """, unsafe_allow_html=True)
 
         st.markdown(f"""
-
         <div class="acct-card">
-
             <div class="acct-card-title">📊 Usage Summary</div>
-
             <div class="acct-row"><span class="acct-label">Players in platform</span><span class="acct-value">{len(players)}</span></div>
-
             <div class="acct-row"><span class="acct-label">Sessions tracked</span><span class="acct-value">{cursor.execute("SELECT COUNT(*) FROM sessions").fetchone()[0]}</span></div>
-
             <div class="acct-row"><span class="acct-label">Reports generated</span><span class="acct-value">{cursor.execute("SELECT COUNT(*) FROM reports").fetchone()[0]}</span></div>
-
             <div class="acct-row"><span class="acct-label">Academies</span><span class="acct-value">{len(clubs)}</span></div>
-
             <div class="acct-row"><span class="acct-label">Pro Data players</span><span class="acct-value">{cursor.execute("SELECT COUNT(*) FROM epl_players").fetchone()[0]}</span></div>
-
         </div>
-
         """, unsafe_allow_html=True)
 
     with acct_tab2:
@@ -2203,23 +2184,14 @@ if st.session_state.get("show_account"):
         plan_color = "#1d4ed8" if is_admin_acct else "#92400e"
 
         st.markdown(f"""
-
         <div class="acct-card" style="border-top:4px solid {plan_color};">
-
             <div class="acct-card-title">💳 Current Plan</div>
-
             <div class="acct-row"><span class="acct-label">Plan Name</span><span class="acct-value">{plan_name}</span></div>
-
             <div class="acct-row"><span class="acct-label">Price</span><span class="acct-value">{plan_price}</span></div>
-
             <div class="acct-row"><span class="acct-label">Billing Cycle</span><span class="acct-value">Monthly</span></div>
-
             <div class="acct-row"><span class="acct-label">Next Renewal</span><span class="acct-value">May 7, 2026</span></div>
-
             <div class="acct-row"><span class="acct-label">Status</span><span class="acct-value" style="color:#16a34a;">● Active</span></div>
-
         </div>
-
         """, unsafe_allow_html=True)
 
         st.markdown("""
@@ -2895,51 +2867,28 @@ if st.session_state.mode == "youth":
         # Hero
 
         st.markdown(f"""
-
         <div style="background:linear-gradient(135deg,#04080f 0%,#1a3a8a 55%,#0f1f5c 100%);border-radius:16px;padding:36px 40px;margin-bottom:24px;position:relative;overflow:hidden;">
-
             <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px);background-size:44px 44px;"></div>
-
             <div style="position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;">
-
                 <div>
-
                     <div style="font-size:9px;font-weight:700;color:rgba(245,200,66,0.65);letter-spacing:4px;text-transform:uppercase;margin-bottom:10px;">Scout IQ·FC · Academy</div>
-
                     <div style="font-family:'Playfair Display',serif;font-size:38px;font-weight:700;color:#fff;letter-spacing:-0.5px;margin-bottom:8px;">{club}</div>
-
                     <div style="font-size:12px;color:rgba(255,255,255,0.4);">{len(acad_ps)} players · {tot_sess} sessions · {tot_reps} reports generated</div>
-
                 </div>
-
                 <div style="text-align:right;">
-
                     <div style="font-size:9px;font-weight:700;color:rgba(245,200,66,0.6);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Season Goals</div>
-
                     <div style="font-size:52px;font-weight:800;color:#f5c842;line-height:1;">{int(tot_g)}</div>
-
                 </div>
-
             </div>
-
             <div style="display:flex;gap:36px;margin-top:24px;position:relative;z-index:1;flex-wrap:wrap;">
-
                 <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:#fff;">{int(tot_a)}</div><div style="font-size:9px;color:rgba(255,255,255,0.32);letter-spacing:2px;text-transform:uppercase;margin-top:2px;">Assists</div></div>
-
                 <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:#fff;">{avg_coach}/10</div><div style="font-size:9px;color:rgba(255,255,255,0.32);letter-spacing:2px;text-transform:uppercase;margin-top:2px;">Avg Coach</div></div>
-
                 <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:#fff;">{avg_att}/10</div><div style="font-size:9px;color:rgba(255,255,255,0.32);letter-spacing:2px;text-transform:uppercase;margin-top:2px;">Avg Attitude</div></div>
-
                 <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:#fff;">{avg_cons}/10</div><div style="font-size:9px;color:rgba(255,255,255,0.32);letter-spacing:2px;text-transform:uppercase;margin-top:2px;">Consistency</div></div>
-
                 <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:#fff;">{avg_dist}km</div><div style="font-size:9px;color:rgba(255,255,255,0.32);letter-spacing:2px;text-transform:uppercase;margin-top:2px;">Avg Distance</div></div>
-
                 <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:#fff;">{avg_spr}</div><div style="font-size:9px;color:rgba(255,255,255,0.32);letter-spacing:2px;text-transform:uppercase;margin-top:2px;">Avg Sprints</div></div>
-
             </div>
-
         </div>
-
         """, unsafe_allow_html=True)
 
         # Stats row
@@ -3217,27 +3166,16 @@ if st.session_state.mode == "youth":
                     badge = '<span style="background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-size:8px;font-weight:700;padding:2px 6px;border-radius:100px;margin-left:6px;">✓ Report</span>' if has_rep else ''
 
                     st.markdown(f"""
-
                     <div style="background:#fff;border:1px solid #e5e7ef;border-radius:12px;padding:16px 18px;margin-bottom:8px;">
-
                         <div style="font-size:14px;font-weight:700;color:#04080f;margin-bottom:3px;">{p[1]}{badge}</div>
-
                         <div style="font-size:11px;color:#9ca3af;margin-bottom:10px;">{p[2]} · {p[4]} · {p[5] or ''}</div>
-
                         <div style="display:flex;gap:14px;">
-
                             <div><div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;">Sessions</div><div style="font-size:13px;font-weight:700;color:#374151;">{p_sess}</div></div>
-
                             <div><div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;">Goals</div><div style="font-size:13px;font-weight:700;color:#374151;">{p_g}</div></div>
-
                             <div><div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;">Assists</div><div style="font-size:13px;font-weight:700;color:#374151;">{p_a}</div></div>
-
                             <div><div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;">Coach</div><div style="font-size:13px;font-weight:700;color:#374151;">{p_c}/10</div></div>
-
                         </div>
-
                     </div>
-
                     """, unsafe_allow_html=True)
 
                     if st.button(f"View Profile →", key=f"view_lp_{p[0]}"):
