@@ -350,7 +350,6 @@ html, body, [class*="css"] { background: #f8f9fc !important; color: #0d1117; }
 .block-container { padding: 0 2rem 2rem 2rem !important; max-width: 100% !important; }
 
 /* ── SIDEBAR ── */
-/* ── SIDEBAR CORE ── */
 [data-testid="stSidebar"] {
     min-width: 260px !important;
     max-width: 260px !important;
@@ -362,37 +361,16 @@ html, body, [class*="css"] { background: #f8f9fc !important; color: #0d1117; }
     overflow-y: auto !important;
     max-height: 100vh !important;
 }
-
-/* Hide Streamlit's own collapse/expand controls entirely - we use our own */
-[data-testid="stSidebarCollapseButton"] { display: none !important; }
-[data-testid="collapsedControl"] { display: none !important; }
-button[kind="header"] { display: none !important; }
-
-/* Our custom toggle button - always visible, fixed position */
-#sb-toggle-btn {
-    position: fixed !important;
-    top: 50% !important;
-    left: 0 !important;
-    transform: translateY(-50%) !important;
-    z-index: 999999 !important;
-    background: #1a3a8a !important;
-    color: #fff !important;
-    border: none !important;
-    border-radius: 0 8px 8px 0 !important;
-    width: 22px !important;
-    height: 52px !important;
-    cursor: pointer !important;
+/* Keep Streamlit collapse button but style it cleanly */
+[data-testid="stSidebarCollapseButton"] {
     display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-size: 14px !important;
-    box-shadow: 2px 0 12px rgba(26,58,138,0.5) !important;
-    transition: background 0.15s, width 0.15s !important;
-    padding: 0 !important;
+    visibility: visible !important;
+    opacity: 0.5 !important;
 }
-#sb-toggle-btn:hover {
-    background: #2d5acd !important;
-    width: 28px !important;
+[data-testid="stSidebarCollapseButton"]:hover { opacity: 1 !important; }
+[data-testid="collapsedControl"] {
+    display: flex !important;
+    visibility: visible !important;
 }
 
 /* Sidebar logo */
@@ -1291,7 +1269,7 @@ cursor.execute("SELECT DISTINCT team FROM epl_players ORDER BY team")
 epl_teams = [r[0] for r in cursor.fetchall()]
 
 for k,v in {
-    "selected_player_id": players[0][0] if players else None,
+    "selected_player_id": None,
     "expanded_clubs": [], "expanded_epl_teams": [],
     "selected_epl_player_id": None, "mode": "youth",
     "show_add_player": False, "show_add_academy": False, "selected_academy": None,
@@ -1299,75 +1277,6 @@ for k,v in {
 }.items():
     if k not in st.session_state: st.session_state[k] = v
 
-
-# ══════════════════════════════════════
-# SIDEBAR TOGGLE - always visible
-# ══════════════════════════════════════
-st.markdown("""
-<button id="sb-toggle-btn" onclick="toggleSidebar()" title="Toggle sidebar">&#8250;</button>
-<script>
-function toggleSidebar() {
-    // Try multiple selectors Streamlit uses across versions
-    var btn = document.querySelector('[data-testid="stSidebarCollapseButton"] button') ||
-              document.querySelector('[data-testid="collapsedControl"] button') ||
-              document.querySelector('button[kind="header"]') ||
-              document.querySelector('[data-testid="stSidebar"] ~ div button') ||
-              document.querySelector('section[data-testid="stSidebar"] + div button');
-    
-    if (btn) {
-        btn.click();
-    } else {
-        // Fallback: toggle sidebar visibility directly
-        var sb = document.querySelector('[data-testid="stSidebar"]');
-        if (sb) {
-            if (sb.style.minWidth === '0px' || sb.getAttribute('aria-expanded') === 'false') {
-                sb.style.minWidth = '260px';
-                sb.style.maxWidth = '260px';
-                sb.setAttribute('aria-expanded', 'true');
-                document.getElementById('sb-toggle-btn').innerHTML = '&#8249;';
-            } else {
-                sb.style.minWidth = '0px';
-                sb.style.maxWidth = '0px';
-                sb.setAttribute('aria-expanded', 'false');
-                document.getElementById('sb-toggle-btn').innerHTML = '&#8250;';
-            }
-        }
-    }
-    // Update arrow direction
-    setTimeout(function() {
-        var sb = document.querySelector('[data-testid="stSidebar"]');
-        var toggleBtn = document.getElementById('sb-toggle-btn');
-        if (sb && toggleBtn) {
-            var expanded = sb.getAttribute('aria-expanded') !== 'false' && 
-                           sb.style.maxWidth !== '0px' &&
-                           getComputedStyle(sb).maxWidth !== '0px';
-            toggleBtn.innerHTML = expanded ? '&#8249;' : '&#8250;';
-        }
-    }, 300);
-}
-
-// Set initial arrow direction and keep it synced
-(function() {
-    function syncArrow() {
-        var sb = document.querySelector('[data-testid="stSidebar"]');
-        var btn = document.getElementById('sb-toggle-btn');
-        if (!sb || !btn) return;
-        var w = getComputedStyle(sb).width;
-        var expanded = parseInt(w) > 50;
-        btn.innerHTML = expanded ? '&#8249;' : '&#8250;';
-        btn.style.left = expanded ? '0' : '0';
-    }
-    // Run on load and watch for changes
-    setTimeout(syncArrow, 500);
-    setTimeout(syncArrow, 1000);
-    var observer = new MutationObserver(syncArrow);
-    setTimeout(function() {
-        var sb = document.querySelector('[data-testid="stSidebar"]');
-        if (sb) observer.observe(sb, {attributes: true, attributeFilter: ['style', 'aria-expanded']});
-    }, 1000);
-})();
-</script>
-""", unsafe_allow_html=True)
 
 # ══════════════════════════════════════
 # SIDEBAR
