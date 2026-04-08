@@ -349,14 +349,26 @@ html, body, [class*="css"] { background: #f8f9fc !important; color: #0d1117; }
 .block-container { padding: 0 2rem 2rem 2rem !important; max-width: 100% !important; }
 
 /* ── SIDEBAR ── */
-[data-testid="stSidebarCollapseButton"],
-[data-testid="collapsedControl"] { display: none !important; }
-[data-testid="stSidebar"] {
-    min-width: 256px !important; max-width: 256px !important;
-    background: #04080f !important;
-    box-shadow: 1px 0 0 rgba(255,255,255,0.04), 4px 0 32px rgba(0,0,0,0.4) !important;
+[data-testid="stSidebarCollapseButton"] {
+    display: flex !important; visibility: visible !important;
+    background: rgba(255,255,255,0.08) !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    border-radius: 6px !important; cursor: pointer !important;
+    width: 26px !important; height: 26px !important;
+    align-items: center !important; justify-content: center !important;
+    position: absolute !important; top: 12px !important; right: 8px !important; z-index: 999 !important;
 }
-[data-testid="stSidebar"] > div { padding: 0 !important; }
+[data-testid="stSidebarCollapseButton"]:hover{background:rgba(255,255,255,0.16) !important;}
+[data-testid="stSidebarCollapseButton"] svg{color:rgba(255,255,255,0.6) !important;width:14px !important;height:14px !important;}
+[data-testid="collapsedControl"]{display:flex !important;visibility:visible !important;}
+[data-testid="stSidebar"]{
+    min-width:260px !important; max-width:260px !important;
+    background:#04080f !important;
+    box-shadow:2px 0 24px rgba(0,0,0,0.4) !important;
+    transition:min-width 0.25s ease,max-width 0.25s ease !important;
+}
+[data-testid="stSidebar"][aria-expanded="false"]{min-width:0 !important;max-width:0 !important;}
+[data-testid="stSidebar"] > div{padding:0 !important;overflow-y:auto !important;max-height:100vh !important;}
 
 /* Sidebar logo */
 .sb-logo {
@@ -524,6 +536,7 @@ html, body, [class*="css"] { background: #f8f9fc !important; color: #0d1117; }
 
 /* Mode buttons */
 .mode-btn-wrap { padding: 8px 16px 4px; display: flex; gap: 6px; }
+[data-testid="stSidebar"] .stButton > button:focus { outline: none !important; box-shadow: none !important; }
 
 /* Sign out */
 .signout-wrap { padding: 8px 16px 16px; }
@@ -763,6 +776,24 @@ html, body, [class*="css"] { background: #f8f9fc !important; color: #0d1117; }
 ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
 
 div[role="radiogroup"] { display: none; }
+
+/* ── FILE UPLOADER - clean, no ugly default ── */
+[data-testid="stFileUploader"] section {
+    background: #f8f9fc !important;
+    border: 2px dashed #e5e7ef !important;
+    border-radius: 12px !important;
+    padding: 16px !important;
+}
+[data-testid="stFileUploader"] section:hover { border-color: #1a3a8a !important; }
+[data-testid="stFileUploader"] section p { font-size: 12px !important; color: #9ca3af !important; }
+[data-testid="stFileUploaderDropzone"] button {
+    background: #04080f !important; color: #fff !important;
+    border: none !important; border-radius: 8px !important;
+    font-size: 11px !important; font-weight: 700 !important;
+    padding: 7px 18px !important; cursor: pointer !important;
+    font-family: 'Outfit', sans-serif !important;
+}
+[data-testid="stFileUploaderDropzone"] button:hover { background: #1a3a8a !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -1212,7 +1243,7 @@ for k,v in {
     "selected_player_id": players[0][0] if players else None,
     "expanded_clubs": [], "expanded_epl_teams": [],
     "selected_epl_player_id": None, "mode": "youth",
-    "show_add_player": False, "show_add_academy": False,
+    "show_add_player": False, "show_add_academy": False, "selected_academy": None,
     "add_player_club": None
 }.items():
     if k not in st.session_state: st.session_state[k] = v
@@ -1263,6 +1294,15 @@ with st.sidebar:
                 st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
             if exp:
+                # Academy overview link
+                st.markdown('<div class="player-row">', unsafe_allow_html=True)
+                if st.button(f"   📊  Academy Overview", key=f"acad_view_{club}", use_container_width=True):
+                    st.session_state.selected_academy = club
+                    st.session_state.selected_player_id = None
+                    st.session_state.show_add_player = False
+                    st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
+
                 for p in filt:
                     active = st.session_state.selected_player_id == p[0]
                     st.markdown(f'<div class="{"player-active" if active else "player-row"}">', unsafe_allow_html=True)
@@ -1687,131 +1727,238 @@ if st.session_state.mode == "youth":
                     st.error(f"Error: {e}")
 
         with tab_ai:
-            st.markdown("""
-            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:20px 24px;margin-bottom:20px;">
-                <p style="font-size:14px;font-weight:700;color:#1d4ed8;margin-bottom:6px;">✨ AI Smart Import</p>
-                <p style="font-size:13px;color:#3b82f6;margin:0;line-height:1.7;">
-                Paste any player data in any format — copied from a spreadsheet, WhatsApp message, 
-                notebook, website, or even rough notes. Claude will intelligently parse it and 
-                convert it to the platform format automatically.
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown('<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:16px 20px;margin-bottom:16px;"><p style="font-size:13px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">✨ AI Smart Import — Any Format</p><p style="font-size:12px;color:#3b82f6;margin:0;">Upload a file OR chat below. Drop in match notes, WhatsApp messages, photos of scoresheets, PDFs, Word docs, Excel files, or just type anything.</p></div>', unsafe_allow_html=True)
 
-            st.markdown("**Paste your raw data below**", unsafe_allow_html=True)
-            raw_input = st.text_area(
-                "raw_data",
-                placeholder="""Examples of what you can paste:
-- A copied Excel table
-- WhatsApp coach notes: 'Luca, 14, striker, scored twice last Tuesday, great attitude'
-- CSV text: name,age,goals,assists\nJohn Smith,15,3,2
-- FBref stats copied from a webpage
-- Handwritten notes typed up
-- Any format — Claude will figure it out""",
-                height=200,
-                label_visibility="collapsed",
-                key="ai_raw_input"
-            )
+            # File upload
+            ai_file = st.file_uploader("Upload file (photo, PDF, Word, Excel, CSV)", type=["jpg","jpeg","png","pdf","docx","xlsx","csv","txt"], key=f"youth_ai_file_{club_name}", label_visibility="collapsed")
 
-            if raw_input and raw_input.strip():
-                st.markdown(f'<p style="font-size:11px;color:#9ca3af;">{len(raw_input)} characters detected</p>', unsafe_allow_html=True)
-                if st.button("✨ Parse and Import with AI", key="ai_parse_btn"):
-                    with st.spinner("Claude is reading and structuring your data..."):
-                        try:
-                            import json
-                            result = ai_clean_data(raw_input, "youth")
-                            # Clean the response
-                            result = result.strip()
-                            if result.startswith("```"):
-                                result = result.split("```")[1]
-                                if result.startswith("json"):
-                                    result = result[4:]
-                            result = result.strip()
-                            players_data = json.loads(result)
+            # Chat/text input
+            raw_input = st.text_area("Or describe / paste data here",
+                placeholder="Type naturally e.g Marcus 15 striker scored 2 goals. Or paste any table CSV match report.",
+                height=130, key="ai_raw_input", label_visibility="collapsed")
 
-                            if not isinstance(players_data, list):
-                                players_data = [players_data]
+            # Chat history for context
+            if "ai_chat_history" not in st.session_state:
+                st.session_state.ai_chat_history = []
 
-                            st.success(f"Claude detected {len(players_data)} player record(s). Preview:")
-                            preview_df = pd.DataFrame([{
-                                "Name": p.get("name","?"),
-                                "Position": p.get("position","?"),
-                                "Club": p.get("club", club_name),
-                                "Goals": p.get("goals",0),
-                                "Assists": p.get("assists",0),
-                                "Coachability": p.get("coachability_rating",7)
-                            } for p in players_data])
-                            st.dataframe(preview_df, use_container_width=True, hide_index=True)
+            if st.button("✨ Parse with AI", key="ai_parse_btn"):
+                input_text = raw_input.strip() if raw_input else ""
+                with st.spinner("Claude is reading your data..."):
+                    try:
+                        import json, io as _io
+                        if ai_file:
+                            file_bytes = ai_file.read()
+                            ext = ai_file.name.split(".")[-1].lower()
+                            if ext in ["jpg","jpeg","png","webp"]:
+                                import base64
+                                b64 = base64.standard_b64encode(file_bytes).decode()
+                                media_map = {"jpg":"image/jpeg","jpeg":"image/jpeg","png":"image/png","webp":"image/webp"}
+                                claude_client = anthropic.Anthropic(api_key=get_api_key())
+                                r = claude_client.messages.create(
+                                    model="claude-opus-4-5", max_tokens=3000,
+                                    messages=[{"role":"user","content":[
+                                        {"type":"image","source":{"type":"base64","media_type":media_map.get(ext,"image/jpeg"),"data":b64}},
+                                        {"type":"text","text":"Extract all youth football player data from this image. Return a JSON array where each object has: name, position, goals, assists, minutes_played, coach_notes. Return ONLY the JSON array, no markdown."}
+                                    ]}])
+                                raw_result = r.content[0].text
+                            elif ext == "docx":
+                                from docx import Document as _DocxDoc
+                                try:
+                                    _d = _DocxDoc(_io.BytesIO(file_bytes))
+                                    input_text = "\n".join([p.text for p in _d.paragraphs if p.text.strip()])
+                                except Exception:
+                                    input_text = file_bytes.decode("utf-8","ignore")[:6000]
+                            elif ext in ["xlsx","xls"]:
+                                _df = pd.read_excel(_io.BytesIO(file_bytes))
+                                raw_result = ai_clean_data(_df.to_string(index=False)[:5000], "youth")
+                            elif ext in ["csv","txt"]:
+                                input_text = file_bytes.decode("utf-8","ignore")[:6000]
+                                raw_result = ai_clean_data(input_text, "youth")
+                            else:
+                                input_text = file_bytes.decode("utf-8","ignore")[:6000]
+                                raw_result = ai_clean_data(input_text, "youth")
+                        elif input_text:
+                            raw_result = ai_clean_data(input_text, "youth")
+                        else:
+                            st.warning("Upload a file or type some data first."); st.stop()
 
-                            if st.button("Confirm and Save to Platform", key="ai_confirm_save"):
-                                saved = 0
-                                for p in players_data:
-                                    pname = str(p.get("name","")).strip()
-                                    if not pname: continue
-                                    p_club = p.get("club", club_name) or club_name
-                                    cursor.execute("SELECT id FROM players WHERE name=?", (pname,))
-                                    ex = cursor.fetchone()
-                                    if ex:
-                                        new_pid = ex[0]
-                                    else:
-                                        cursor.execute("INSERT INTO players (name,date_of_birth,position,club,dominant_foot,age_group,nationality) VALUES (?,?,?,?,?,?,?)",
-                                            (pname,
-                                             p.get("date_of_birth",""),
-                                             p.get("position","Central Midfielder"),
-                                             p_club,
-                                             p.get("dominant_foot","Right"),
-                                             p.get("age_group","U16"),
-                                             p.get("nationality","")))
-                                        conn.commit()
-                                        new_pid = cursor.lastrowid
+                        raw_result = raw_result.strip()
+                        if raw_result.startswith("```"):
+                            parts = raw_result.split("```")
+                            raw_result = parts[1] if len(parts)>1 else raw_result
+                            if raw_result.startswith("json"): raw_result = raw_result[4:]
+                        players_data = json.loads(raw_result.strip())
+                        if not isinstance(players_data, list): players_data = [players_data]
 
-                                    def sv(key, default=0, fl=False):
-                                        try:
-                                            v = p.get(key, default)
-                                            if v is None: return default
-                                            return float(v) if fl else int(float(v))
-                                        except: return default
+                        st.session_state["ai_parsed_players"] = players_data
+                        st.session_state["ai_parse_club"] = club_name
+                    except Exception as e:
+                        st.error(f"Could not parse: {e}. Try adding more detail or structure.")
 
-                                    cursor.execute("""INSERT INTO sessions
-                                        (player_id,session_date,session_type,minutes_played,distance_covered_km,
-                                        sprint_count,top_speed_kmh,passes_completed,passes_attempted,dribbles_completed,
-                                        defensive_actions,goals,assists,chances_created,tackles_won,
-                                        coachability_rating,attitude_score,consistency_rating,coach_notes)
-                                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                                        (new_pid,
-                                         p.get("session_date","2024-09-01"),
-                                         p.get("session_type","match"),
-                                         sv("minutes_played",90),
-                                         sv("distance_covered_km",8.0,True),
-                                         sv("sprint_count",15),
-                                         sv("top_speed_kmh",28.0,True),
-                                         sv("passes_completed",25),
-                                         sv("passes_attempted",32),
-                                         sv("dribbles_completed",4),
-                                         sv("defensive_actions",6),
-                                         sv("goals"),
-                                         sv("assists"),
-                                         sv("chances_created"),
-                                         sv("tackles_won"),
-                                         sv("coachability_rating",7),
-                                         sv("attitude_score",7),
-                                         sv("consistency_rating",7),
-                                         str(p.get("coach_notes",""))))
-                                    conn.commit()
-                                    saved += 1
+            if st.session_state.get("ai_parsed_players"):
+                players_data = st.session_state["ai_parsed_players"]
+                st.success(f"Claude found {len(players_data)} player record(s) — review before saving:")
+                prev_df = pd.DataFrame([{"Name":p.get("name","?"),"Position":p.get("position","?"),"Goals":p.get("goals",0),"Assists":p.get("assists",0),"Coach":p.get("coachability_rating",7)} for p in players_data])
+                st.dataframe(prev_df, use_container_width=True, hide_index=True)
 
-                                st.session_state.selected_player_id = new_pid
-                                st.session_state.show_add_player = False
-                                st.success(f"{saved} player(s) imported and saved.")
-                                st.rerun()
-
-                        except json.JSONDecodeError as e:
-                            st.error(f"Could not parse the data. Try adding more context or structure to your input.")
-                        except Exception as e:
-                            st.error(f"Error: {e}")
+                sc1, sc2 = st.columns([1,4])
+                with sc1:
+                    if st.button("✅ Save All to Platform", key="ai_confirm_save"):
+                        saved = 0
+                        for p in players_data:
+                            pname = str(p.get("name","")).strip()
+                            if not pname: continue
+                            p_club = p.get("club", club_name) or club_name
+                            cursor.execute("SELECT id FROM players WHERE name=?", (pname,))
+                            ex = cursor.fetchone()
+                            if ex: new_pid = ex[0]
+                            else:
+                                cursor.execute("INSERT INTO players (name,date_of_birth,position,club,dominant_foot,age_group,nationality) VALUES (?,?,?,?,?,?,?)",(pname,p.get("date_of_birth",""),p.get("position","Central Midfielder"),p_club,p.get("dominant_foot","Right"),p.get("age_group","U16"),p.get("nationality","")))
+                                conn.commit(); new_pid = cursor.lastrowid
+                            def sv(key, default=0, fl=False):
+                                try:
+                                    v=p.get(key,default); return float(v) if fl else int(float(v)) if v is not None else default
+                                except: return default
+                            cursor.execute("INSERT INTO sessions (player_id,session_date,session_type,minutes_played,distance_covered_km,sprint_count,top_speed_kmh,passes_completed,passes_attempted,dribbles_completed,defensive_actions,goals,assists,chances_created,tackles_won,coachability_rating,attitude_score,consistency_rating,coach_notes) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",(new_pid,p.get("session_date","2024-09-01"),p.get("session_type","match"),sv("minutes_played",90),sv("distance_covered_km",8,True),sv("sprint_count",15),sv("top_speed_kmh",28,True),sv("passes_completed",25),sv("passes_attempted",32),sv("dribbles_completed",4),sv("defensive_actions",6),sv("goals"),sv("assists"),sv("chances_created"),sv("tackles_won"),sv("coachability_rating",7),sv("attitude_score",7),sv("consistency_rating",7),str(p.get("coach_notes",""))))
+                            conn.commit(); saved += 1
+                        st.session_state["ai_parsed_players"] = None
+                        st.session_state.selected_player_id = new_pid
+                        st.session_state.show_add_player = False
+                        st.success(f"{saved} player(s) saved. Opening player profile...")
+                        st.rerun()
+                with sc2:
+                    if st.button("✕ Discard", key="ai_discard"):
+                        st.session_state["ai_parsed_players"] = None; st.rerun()
 
         if st.button("← Cancel", key="cancel_add"):
             st.session_state.show_add_player = False; st.rerun()
+        st.stop()
+
+    # ── ACADEMY LANDING PAGE ──
+    if st.session_state.get("selected_academy") and not st.session_state.selected_player_id:
+        club = st.session_state.selected_academy
+        acad_ps = clubs.get(club, [])
+
+        if st.button("← Back", key="bk_acad_lp"):
+            st.session_state.selected_academy = None; st.rerun()
+
+        if not acad_ps:
+            st.markdown(f'<div class="page-header"><div class="page-title">{club}</div></div>', unsafe_allow_html=True)
+            st.info("No players in this academy yet.")
+            if st.button("＋ Add First Player", key="add_first_p"):
+                st.session_state.show_add_player = True
+                st.session_state.add_player_club = club
+                st.session_state.selected_academy = None
+                st.rerun()
+            st.stop()
+
+        all_pids = [p[0] for p in acad_ps]
+        ph = ",".join(["?"]*len(all_pids))
+        r = cursor.execute(f"SELECT SUM(goals),SUM(assists),SUM(minutes_played),COUNT(*) FROM sessions WHERE player_id IN ({ph})", all_pids).fetchone()
+        tot_g=r[0] or 0; tot_a=r[1] or 0; tot_mins=r[2] or 0; tot_sess=r[3] or 0
+        r2 = cursor.execute(f"SELECT AVG(coachability_rating),AVG(attitude_score),AVG(consistency_rating),AVG(distance_covered_km),AVG(sprint_count) FROM sessions WHERE player_id IN ({ph})", all_pids).fetchone()
+        avg_coach=round(r2[0] or 0,1); avg_att=round(r2[1] or 0,1); avg_cons=round(r2[2] or 0,1)
+        avg_dist=round(r2[3] or 0,1); avg_spr=round(r2[4] or 0,1)
+        tot_reps = cursor.execute(f"SELECT COUNT(*) FROM reports WHERE player_id IN ({ph})", all_pids).fetchone()[0]
+
+        # Hero
+        st.markdown(f"""
+        <div style="background:linear-gradient(135deg,#04080f 0%,#1a3a8a 55%,#0f1f5c 100%);border-radius:16px;padding:36px 40px;margin-bottom:24px;position:relative;overflow:hidden;">
+            <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px);background-size:44px 44px;"></div>
+            <div style="position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;">
+                <div>
+                    <div style="font-size:9px;font-weight:700;color:rgba(245,200,66,0.65);letter-spacing:4px;text-transform:uppercase;margin-bottom:10px;">Scout IQ·FC · Academy</div>
+                    <div style="font-family:'Playfair Display',serif;font-size:38px;font-weight:700;color:#fff;letter-spacing:-0.5px;margin-bottom:8px;">{club}</div>
+                    <div style="font-size:12px;color:rgba(255,255,255,0.4);">{len(acad_ps)} players · {tot_sess} sessions · {tot_reps} reports generated</div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:9px;font-weight:700;color:rgba(245,200,66,0.6);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Season Goals</div>
+                    <div style="font-size:52px;font-weight:800;color:#f5c842;line-height:1;">{int(tot_g)}</div>
+                </div>
+            </div>
+            <div style="display:flex;gap:36px;margin-top:24px;position:relative;z-index:1;flex-wrap:wrap;">
+                <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:#fff;">{int(tot_a)}</div><div style="font-size:9px;color:rgba(255,255,255,0.32);letter-spacing:2px;text-transform:uppercase;margin-top:2px;">Assists</div></div>
+                <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:#fff;">{avg_coach}/10</div><div style="font-size:9px;color:rgba(255,255,255,0.32);letter-spacing:2px;text-transform:uppercase;margin-top:2px;">Avg Coach</div></div>
+                <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:#fff;">{avg_att}/10</div><div style="font-size:9px;color:rgba(255,255,255,0.32);letter-spacing:2px;text-transform:uppercase;margin-top:2px;">Avg Attitude</div></div>
+                <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:#fff;">{avg_cons}/10</div><div style="font-size:9px;color:rgba(255,255,255,0.32);letter-spacing:2px;text-transform:uppercase;margin-top:2px;">Consistency</div></div>
+                <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:#fff;">{avg_dist}km</div><div style="font-size:9px;color:rgba(255,255,255,0.32);letter-spacing:2px;text-transform:uppercase;margin-top:2px;">Avg Distance</div></div>
+                <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:#fff;">{avg_spr}</div><div style="font-size:9px;color:rgba(255,255,255,0.32);letter-spacing:2px;text-transform:uppercase;margin-top:2px;">Avg Sprints</div></div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Stats row
+        mc1,mc2,mc3,mc4,mc5 = st.columns(5)
+        for col,lbl,val,tp in [(mc1,"Players",len(acad_ps),"#1a3a8a"),(mc2,"Sessions",tot_sess,"#3b82f6"),(mc3,"Goals",int(tot_g),"#f5c842"),(mc4,"Assists",int(tot_a),"#16a34a"),(mc5,"Reports",tot_reps,"#7c3aed")]:
+            with col:
+                st.markdown(f'<div class="metric-card" style="border-top:3px solid {tp};"><div class="metric-label">{lbl}</div><div class="metric-value">{val}</div></div>', unsafe_allow_html=True)
+
+        # Charts row
+        import plotly.graph_objects as go
+        pos_counts = {}
+        age_counts = {}
+        for p in acad_ps:
+            pos_counts[p[2] or "Unknown"] = pos_counts.get(p[2] or "Unknown", 0) + 1
+            age_counts[p[4] or "Unknown"] = age_counts.get(p[4] or "Unknown", 0) + 1
+
+        st.markdown('<div class="section-title">Squad Analytics</div>', unsafe_allow_html=True)
+        ch1,ch2,ch3 = st.columns(3)
+        with ch1:
+            fig = go.Figure(go.Bar(x=list(pos_counts.keys()), y=list(pos_counts.values()), marker_color='#1a3a8a', opacity=0.85, marker_line_width=0))
+            fig.update_layout(title='Squad by Position', paper_bgcolor='white', plot_bgcolor='white', margin=dict(l=10,r=10,t=36,b=60), xaxis=dict(showgrid=False, tickangle=45), yaxis=dict(gridcolor='#f3f4f6'), height=230, showlegend=False)
+            st.plotly_chart(fig, use_container_width=True)
+        with ch2:
+            fig = go.Figure(go.Bar(x=list(age_counts.keys()), y=list(age_counts.values()), marker_color='#f5c842', opacity=0.9, marker_line_width=0))
+            fig.update_layout(title='Squad by Age Group', paper_bgcolor='white', plot_bgcolor='white', margin=dict(l=10,r=10,t=36,b=20), xaxis=dict(showgrid=False), yaxis=dict(gridcolor='#f3f4f6'), height=230, showlegend=False)
+            st.plotly_chart(fig, use_container_width=True)
+        with ch3:
+            player_goals = []
+            for p in acad_ps:
+                g = cursor.execute("SELECT SUM(goals) FROM sessions WHERE player_id=?", (p[0],)).fetchone()[0] or 0
+                if g > 0: player_goals.append((p[1][:14], g))
+            player_goals.sort(key=lambda x: x[1], reverse=True)
+            if player_goals:
+                fig = go.Figure(go.Bar(x=[x[0] for x in player_goals[:8]], y=[x[1] for x in player_goals[:8]], marker_color='#16a34a', opacity=0.85, marker_line_width=0))
+                fig.update_layout(title='Top Scorers', paper_bgcolor='white', plot_bgcolor='white', margin=dict(l=10,r=10,t=36,b=60), xaxis=dict(showgrid=False, tickangle=45), yaxis=dict(gridcolor='#f3f4f6'), height=230, showlegend=False)
+                st.plotly_chart(fig, use_container_width=True)
+
+        # Player roster
+        roster_c1, roster_c2 = st.columns([5,1])
+        with roster_c1:
+            st.markdown('<div class="section-title">Player Roster</div>', unsafe_allow_html=True)
+        with roster_c2:
+            st.markdown('<div style="padding-top:28px;">', unsafe_allow_html=True)
+            if st.button("＋ Add Player", key="add_from_acad_lp"):
+                st.session_state.show_add_player = True
+                st.session_state.add_player_club = club
+                st.session_state.selected_academy = None
+                st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        for i in range(0, len(acad_ps), 3):
+            cols = st.columns(3)
+            for j, p in enumerate(acad_ps[i:i+3]):
+                with cols[j]:
+                    ps = cursor.execute("SELECT COUNT(*),SUM(goals),SUM(assists),AVG(coachability_rating) FROM sessions WHERE player_id=?", (p[0],)).fetchone()
+                    p_sess=ps[0] or 0; p_g=int(ps[1] or 0); p_a=int(ps[2] or 0); p_c=round(ps[3] or 0,1)
+                    has_rep = cursor.execute("SELECT COUNT(*) FROM reports WHERE player_id=?", (p[0],)).fetchone()[0] > 0
+                    badge = '<span style="background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-size:8px;font-weight:700;padding:2px 6px;border-radius:100px;margin-left:6px;">✓ Report</span>' if has_rep else ''
+                    st.markdown(f"""
+                    <div style="background:#fff;border:1px solid #e5e7ef;border-radius:12px;padding:16px 18px;margin-bottom:8px;">
+                        <div style="font-size:14px;font-weight:700;color:#04080f;margin-bottom:3px;">{p[1]}{badge}</div>
+                        <div style="font-size:11px;color:#9ca3af;margin-bottom:10px;">{p[2]} · {p[4]} · {p[5] or ''}</div>
+                        <div style="display:flex;gap:14px;">
+                            <div><div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;">Sessions</div><div style="font-size:13px;font-weight:700;color:#374151;">{p_sess}</div></div>
+                            <div><div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;">Goals</div><div style="font-size:13px;font-weight:700;color:#374151;">{p_g}</div></div>
+                            <div><div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;">Assists</div><div style="font-size:13px;font-weight:700;color:#374151;">{p_a}</div></div>
+                            <div><div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;">Coach</div><div style="font-size:13px;font-weight:700;color:#374151;">{p_c}/10</div></div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    if st.button(f"View Profile →", key=f"view_lp_{p[0]}"):
+                        st.session_state.selected_player_id = p[0]
+                        st.session_state.selected_academy = None
+                        st.rerun()
         st.stop()
 
     # WELCOME SCREEN
@@ -1926,12 +2073,7 @@ if st.session_state.mode == "youth":
     hc1, hc2 = st.columns([4,1])
     with hc1:
         st.markdown(f'<div class="page-header"><div><div class="page-title">{pl[1]}</div><div class="page-meta">{pl[4]} &nbsp;·&nbsp; {pl[6]} &nbsp;·&nbsp; {pl[3]} &nbsp;·&nbsp; {pl[7] or ""}</div></div></div>', unsafe_allow_html=True)
-    with hc2:
-        if not rep:
-            st.markdown('<div class="gen-btn" style="margin-top:32px;">', unsafe_allow_html=True)
-            if st.button("Generate Report", key=f"gen_top_{pid}"):
-                st.session_state[f"gen_trigger_{pid}"] = True
-            st.markdown('</div>', unsafe_allow_html=True)
+    # No generate button at top - single button at bottom only
 
     c1,c2,c3,c4,c5,c6 = st.columns(6)
     cards = [(c1,"Sessions",sc,"neutral"),(c2,"Avg Distance",f"{avg_d} km","neutral"),
@@ -1942,14 +2084,17 @@ if st.session_state.mode == "youth":
             st.markdown(f'<div class="metric-card {style}"><div class="metric-label">{lbl}</div><div class="metric-value">{val}</div></div>', unsafe_allow_html=True)
 
     # Session history
-    st.markdown('<div class="section-title">Session History</div>', unsafe_allow_html=True)
-    add_key = f"show_add_sess_{pid}"
-    if add_key not in st.session_state: st.session_state[add_key] = False
-
-    sc_col, btn_col = st.columns([8,1])
-    with btn_col:
-        if st.button("＋ Session", key=f"add_s_{pid}"):
+    # Session history header + add button - no overlap
+    sh_c1, sh_c2 = st.columns([6, 1])
+    with sh_c1:
+        st.markdown('<div class="section-title" style="margin-bottom:0;">Session History</div>', unsafe_allow_html=True)
+    with sh_c2:
+        st.markdown('<div style="padding-top:28px;">', unsafe_allow_html=True)
+        add_key = f"show_add_sess_{pid}"
+        if add_key not in st.session_state: st.session_state[add_key] = False
+        if st.button("＋ Add", key=f"add_s_{pid}"):
             st.session_state[add_key] = not st.session_state[add_key]; st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
     if st.session_state[add_key]:
         with st.expander("New Session", expanded=True):
@@ -2059,18 +2204,7 @@ if st.session_state.mode == "youth":
     # Scouting Report
     st.markdown('<div class="section-title">Scouting Report</div>', unsafe_allow_html=True)
 
-    # Handle generate trigger from top button
-    if st.session_state.get(f"gen_trigger_{pid}") and not rep:
-        del st.session_state[f"gen_trigger_{pid}"]
-        cursor.execute("SELECT * FROM sessions WHERE player_id=? ORDER BY session_date", (pid,))
-        fresh_sess = cursor.fetchall()
-        if not fresh_sess:
-            st.warning("Add session data first.")
-        else:
-            with st.spinner("Generating report — about 30 seconds..."):
-                rtext = ai_report(build_youth_prompt(pl, fresh_sess))
-                cursor.execute("INSERT INTO reports (player_id,report_text) VALUES (?,?)", (pid, rtext))
-                conn.commit(); st.rerun()
+
 
     if rep:
         render_report(rep[2], pid, pl[1], f"{pl[4]}  ·  {pl[6]}  ·  {pl[3]}", is_pro=False)
