@@ -4,6 +4,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import io
 import os
+import base64
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -1764,12 +1765,12 @@ if st.session_state.mode == "youth":
                             elif ext == "docx":
                                 from docx import Document as _DocxDoc
                                 try:
-                                    _d = _DocxDoc(_io.BytesIO(file_bytes))
+                                    _d = _DocxDoc(io.BytesIO(file_bytes))
                                     input_text = "\n".join([p.text for p in _d.paragraphs if p.text.strip()])
                                 except Exception:
                                     input_text = file_bytes.decode("utf-8","ignore")[:6000]
                             elif ext in ["xlsx","xls"]:
-                                _df = pd.read_excel(_io.BytesIO(file_bytes))
+                                _df = pd.read_excel(io.BytesIO(file_bytes))
                                 raw_result = ai_clean_data(_df.to_string(index=False)[:5000], "youth")
                             elif ext in ["csv","txt"]:
                                 input_text = file_bytes.decode("utf-8","ignore")[:6000]
