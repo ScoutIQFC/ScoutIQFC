@@ -350,60 +350,49 @@ html, body, [class*="css"] { background: #f8f9fc !important; color: #0d1117; }
 .block-container { padding: 0 2rem 2rem 2rem !important; max-width: 100% !important; }
 
 /* ── SIDEBAR ── */
-/* Collapse button - clean arrow only */
-[data-testid="stSidebarCollapseButton"] {
-    display: flex !important; visibility: visible !important;
-    background: transparent !important;
-    border: none !important; outline: none !important;
-    box-shadow: none !important;
-    width: 28px !important; height: 28px !important;
-    align-items: center !important; justify-content: center !important;
-    cursor: pointer !important;
-    opacity: 0.6 !important;
-    transition: opacity 0.2s !important;
-}
-[data-testid="stSidebarCollapseButton"]:hover { opacity: 1 !important; }
-[data-testeid="stSidebarCollapseButton"] p { display: none !important; }
-[data-testid="stSidebarCollapseButton"] svg {
-    color: #ffffff !important;
-    width: 16px !important; height: 16px !important;
-}
-
-/* Collapsed control - the reopen arrow - make it visible and blue */
-[data-testid="collapsedControl"] {
-    display: flex !important; visibility: visible !important;
-    position: fixed !important; left: 0 !important; top: 50% !important;
-    transform: translateY(-50%) !important; z-index: 99999 !important;
-    background: #1a3a8a !important;
-    border-radius: 0 8px 8px 0 !important;
-    width: 24px !important; height: 48px !important;
-    align-items: center !important; justify-content: center !important;
-    cursor: pointer !important;
-    box-shadow: 2px 0 12px rgba(26,58,138,0.4) !important;
-    transition: background 0.2s, width 0.2s !important;
-}
-[data-testid="collapsedControl"]:hover {
-    background: #2d5acd !important;
-    width: 28px !important;
-}
-[data-testid="collapsedControl"] svg {
-    color: #ffffff !important;
-    width: 14px !important; height: 14px !important;
-}
-
+/* ── SIDEBAR CORE ── */
 [data-testid="stSidebar"] {
-    min-width: 260px !important; max-width: 260px !important;
+    min-width: 260px !important;
+    max-width: 260px !important;
     background: #04080f !important;
     box-shadow: 2px 0 24px rgba(0,0,0,0.4) !important;
-    transition: all 0.25s ease !important;
-}
-[data-testid="stSidebar"][aria-expanded="false"] {
-    min-width: 0px !important; max-width: 0px !important;
 }
 [data-testid="stSidebar"] > div {
     padding: 0 !important;
     overflow-y: auto !important;
     max-height: 100vh !important;
+}
+
+/* Hide Streamlit's own collapse/expand controls entirely - we use our own */
+[data-testid="stSidebarCollapseButton"] { display: none !important; }
+[data-testid="collapsedControl"] { display: none !important; }
+button[kind="header"] { display: none !important; }
+
+/* Our custom toggle button - always visible, fixed position */
+#sb-toggle-btn {
+    position: fixed !important;
+    top: 50% !important;
+    left: 0 !important;
+    transform: translateY(-50%) !important;
+    z-index: 999999 !important;
+    background: #1a3a8a !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 0 8px 8px 0 !important;
+    width: 22px !important;
+    height: 52px !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 14px !important;
+    box-shadow: 2px 0 12px rgba(26,58,138,0.5) !important;
+    transition: background 0.15s, width 0.15s !important;
+    padding: 0 !important;
+}
+#sb-toggle-btn:hover {
+    background: #2d5acd !important;
+    width: 28px !important;
 }
 
 /* Sidebar logo */
@@ -1310,6 +1299,75 @@ for k,v in {
 }.items():
     if k not in st.session_state: st.session_state[k] = v
 
+
+# ══════════════════════════════════════
+# SIDEBAR TOGGLE - always visible
+# ══════════════════════════════════════
+st.markdown("""
+<button id="sb-toggle-btn" onclick="toggleSidebar()" title="Toggle sidebar">&#8250;</button>
+<script>
+function toggleSidebar() {
+    // Try multiple selectors Streamlit uses across versions
+    var btn = document.querySelector('[data-testid="stSidebarCollapseButton"] button') ||
+              document.querySelector('[data-testid="collapsedControl"] button') ||
+              document.querySelector('button[kind="header"]') ||
+              document.querySelector('[data-testid="stSidebar"] ~ div button') ||
+              document.querySelector('section[data-testid="stSidebar"] + div button');
+    
+    if (btn) {
+        btn.click();
+    } else {
+        // Fallback: toggle sidebar visibility directly
+        var sb = document.querySelector('[data-testid="stSidebar"]');
+        if (sb) {
+            if (sb.style.minWidth === '0px' || sb.getAttribute('aria-expanded') === 'false') {
+                sb.style.minWidth = '260px';
+                sb.style.maxWidth = '260px';
+                sb.setAttribute('aria-expanded', 'true');
+                document.getElementById('sb-toggle-btn').innerHTML = '&#8249;';
+            } else {
+                sb.style.minWidth = '0px';
+                sb.style.maxWidth = '0px';
+                sb.setAttribute('aria-expanded', 'false');
+                document.getElementById('sb-toggle-btn').innerHTML = '&#8250;';
+            }
+        }
+    }
+    // Update arrow direction
+    setTimeout(function() {
+        var sb = document.querySelector('[data-testid="stSidebar"]');
+        var toggleBtn = document.getElementById('sb-toggle-btn');
+        if (sb && toggleBtn) {
+            var expanded = sb.getAttribute('aria-expanded') !== 'false' && 
+                           sb.style.maxWidth !== '0px' &&
+                           getComputedStyle(sb).maxWidth !== '0px';
+            toggleBtn.innerHTML = expanded ? '&#8249;' : '&#8250;';
+        }
+    }, 300);
+}
+
+// Set initial arrow direction and keep it synced
+(function() {
+    function syncArrow() {
+        var sb = document.querySelector('[data-testid="stSidebar"]');
+        var btn = document.getElementById('sb-toggle-btn');
+        if (!sb || !btn) return;
+        var w = getComputedStyle(sb).width;
+        var expanded = parseInt(w) > 50;
+        btn.innerHTML = expanded ? '&#8249;' : '&#8250;';
+        btn.style.left = expanded ? '0' : '0';
+    }
+    // Run on load and watch for changes
+    setTimeout(syncArrow, 500);
+    setTimeout(syncArrow, 1000);
+    var observer = new MutationObserver(syncArrow);
+    setTimeout(function() {
+        var sb = document.querySelector('[data-testid="stSidebar"]');
+        if (sb) observer.observe(sb, {attributes: true, attributeFilter: ['style', 'aria-expanded']});
+    }, 1000);
+})();
+</script>
+""", unsafe_allow_html=True)
 
 # ══════════════════════════════════════
 # SIDEBAR
