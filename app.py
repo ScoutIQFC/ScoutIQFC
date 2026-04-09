@@ -882,23 +882,24 @@ If a value cannot be determined, use a sensible default (7 for ratings, 90 for m
 Return only the JSON array."""
         prompt = f"""You are a strict football data parser. Convert raw player stats to JSON.
 
-CRITICAL - READ CAREFULLY:
-- "Assists" = actual assists (integer). Do NOT use XA for this.
-- "Goals" = actual goals (integer). Do NOT use XG for this.
-- "XG" or "xG" = expected goals (float) - separate field
-- "XA" or "xA" = expected assists (float) - separate field
-- "Passes" = total passes, NOT assists
-- "Minutes Played" or "Min" = minutes (integer)
-- "Appearances" or "Apps" = appearances (integer)
-- Map ONLY explicitly labeled fields. Never infer or calculate.
+CRITICAL RULES:
+1. PLAYER NAME: The person the stats belong to. If the data says "Bruno Fernandes Stats" or starts with a player name, that is the name field.
+2. TEAM: The club the player plays for (e.g. Manchester United, Arsenal). Never use the team name as the player name.
+3. "Assists" or "AST" = actual assists (integer). Do NOT use XA for this.
+4. "Goals" or "GLS" = actual goals (integer). Do NOT use XG for this.
+5. "XG" or "xG" = expected goals (float) - SEPARATE from goals.
+6. "XA" or "xA" = expected assists (float) - SEPARATE from assists.
+7. "Passes" = total passes, NOT assists.
+8. "Minutes Played" = minutes (integer).
+9. Map ONLY explicitly labeled fields. Never infer.
 
-Return ONLY a JSON array. Each object must have:
-name, team, position (Forward/Midfielder/Defender/Goalkeeper), nationality, age (integer),
-season (string), appearances (integer), minutes (integer), goals (integer), assists (integer),
-goals_per_90 (float), assists_per_90 (float), yellow_cards (integer), red_cards (integer),
-clean_sheets (integer), xg (float), xa (float)
+Return ONLY a JSON array. Each object:
+name (player name), team (club name), position (Forward/Midfielder/Defender/Goalkeeper),
+nationality, age (integer), season (string), appearances (integer), minutes (integer),
+goals (integer), assists (integer), goals_per_90 (float), assists_per_90 (float),
+yellow_cards (integer), red_cards (integer), clean_sheets (integer), xg (float), xa (float)
 
-Use 0 for missing values. No markdown. No explanation. Just the JSON array.
+Use 0 for missing. No markdown. No explanation. JSON array only.
 
 Raw data:
 {raw_text}"""
@@ -1335,25 +1336,32 @@ with st.sidebar:
         srch_e = st.text_input("se", placeholder="Search players...", label_visibility="collapsed")
         st.markdown('<div class="sb-section">Pro Teams <span class="badge-pro">EPL</span></div>', unsafe_allow_html=True)
         if epl_teams:
-            for team in epl_teams:
-                cursor.execute("SELECT id,name,position FROM epl_players WHERE team=?", (team,))
-                tps = cursor.fetchall()
-                filt_e = [p for p in tps if srch_e.lower() in p[1].lower()] if srch_e else tps
-                if not filt_e: continue
-                exp_e = team in st.session_state.expanded_epl_teams or bool(srch_e)
-                st.markdown('<div class="club-row">', unsafe_allow_html=True)
-                if st.button(f"{'▾' if exp_e else '▸'}  {team}", key=f"et_{team}", use_container_width=True):
-                    if exp_e and not srch_e: st.session_state.expanded_epl_teams.remove(team)
-                    elif not exp_e: st.session_state.expanded_epl_teams.append(team)
-                    st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
-                if exp_e:
-                    for p in filt_e:
-                        active = st.session_state.selected_epl_player_id == p[0]
-                        st.markdown(f'<div class="{"player-active" if active else "player-row"}">', unsafe_allow_html=True)
-                        if st.button(f"{'▸  ' if active else '   '}{p[1]}", key=f"ep_{p[0]}", use_container_width=True):
-                            st.session_state.selected_epl_player_id = p[0]; st.rerun()
-                        st.markdown('</div>', unsafe_allow_html=True)
+            # Show all pro players directly - team shown as subtitle
+            cursor.execute("SELECT id,name,position,team FROM epl_players ORDER BY name")
+            all_epl = cursor.fetchall()
+            filt_e = [p for p in all_epl if srch_e.lower() in p[1].lower() or srch_e.lower() in (p[3] or "").lower()] if srch_e else all_epl
+            if filt_e:
+                # Group by team for display
+                teams_seen = {}
+                for p in filt_e:
+                    t = p[3] or "No Team"
+                    if t not in teams_seen: teams_seen[t] = []
+                    teams_seen[t].append(p)
+                for team, tplayers in teams_seen.items():
+                    exp_e = team in st.session_state.expanded_epl_teams or bool(srch_e) or len(teams_seen) == 1
+                    st.markdown('<div class="club-row">', unsafe_allow_html=True)
+                    if st.button(f"{'▾' if exp_e else '▸'}  {team[:22]}", key=f"et_{team}", use_container_width=True):
+                        if exp_e and not srch_e: st.session_state.expanded_epl_teams.remove(team) if team in st.session_state.expanded_epl_teams else None
+                        elif not exp_e: st.session_state.expanded_epl_teams.append(team)
+                        st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
+                    if exp_e:
+                        for p in tplayers:
+                            active = st.session_state.selected_epl_player_id == p[0]
+                            st.markdown(f'<div class="{"player-active" if active else "player-row"}">', unsafe_allow_html=True)
+                            if st.button(f"{'▸  ' if active else '   '}{p[1][:20]}", key=f"ep_{p[0]}", use_container_width=True):
+                                st.session_state.selected_epl_player_id = p[0]; st.rerun()
+                            st.markdown('</div>', unsafe_allow_html=True)
         else:
             st.markdown('<div style="padding:10px 20px;font-size:11px;color:rgba(255,255,255,0.3);">Upload data in Pro Data tab</div>', unsafe_allow_html=True)
     st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
