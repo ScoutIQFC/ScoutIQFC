@@ -896,7 +896,7 @@ Raw data:
     r = client.messages.create(
         model="claude-opus-4-5",
         max_tokens=4000,
-        messages=[{{"role": "user", "content": prompt}}]
+        messages=[{"role": "user", "content": prompt}]
     )
     return r.content[0].text
 
