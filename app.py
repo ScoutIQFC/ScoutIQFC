@@ -880,39 +880,28 @@ Each player object must have these exact keys (use null for missing values):
 
 If a value cannot be determined, use a sensible default (7 for ratings, 90 for minutes, etc).
 Return only the JSON array."""
-    else:  # pro
-        prompt = f"""You are a data parser for a professional football analytics platform.
+        prompt = f"""You are a strict football data parser. Convert raw player stats to JSON.
 
-Convert the following raw data into structured JSON for professional players.
-The data might be in any format — copied from websites, spreadsheets, text reports, stats tables etc.
+CRITICAL - READ CAREFULLY:
+- "Assists" = actual assists (integer). Do NOT use XA for this.
+- "Goals" = actual goals (integer). Do NOT use XG for this.
+- "XG" or "xG" = expected goals (float) - separate field
+- "XA" or "xA" = expected assists (float) - separate field
+- "Passes" = total passes, NOT assists
+- "Minutes Played" or "Min" = minutes (integer)
+- "Appearances" or "Apps" = appearances (integer)
+- Map ONLY explicitly labeled fields. Never infer or calculate.
+
+Return ONLY a JSON array. Each object must have:
+name, team, position (Forward/Midfielder/Defender/Goalkeeper), nationality, age (integer),
+season (string), appearances (integer), minutes (integer), goals (integer), assists (integer),
+goals_per_90 (float), assists_per_90 (float), yellow_cards (integer), red_cards (integer),
+clean_sheets (integer), xg (float), xa (float)
+
+Use 0 for missing values. No markdown. No explanation. Just the JSON array.
 
 Raw data:
-{raw_text}
-
-Return ONLY a valid JSON array with no other text, no markdown, no explanation.
-Each player object must have these exact keys:
-{{
-  "name": "Full Name",
-  "team": "Club name",
-  "position": "one of: Forward, Midfielder, Defender, Goalkeeper",
-  "nationality": "Country or null",
-  "age": 25,
-  "season": "2024/25",
-  "appearances": 20,
-  "minutes": 1800,
-  "goals": 5,
-  "assists": 3,
-  "goals_per_90": 0.25,
-  "assists_per_90": 0.15,
-  "yellow_cards": 2,
-  "red_cards": 0,
-  "clean_sheets": 0,
-  "xg": 4.5,
-  "xa": 2.8
-}}
-
-If a value cannot be determined use 0 or null.
-Return only the JSON array."""
+{raw_text}"""
     r = claude.messages.create(
         model="claude-opus-4-5",
         max_tokens=4000,
@@ -1056,29 +1045,8 @@ def render_report(text, pid, pname, meta, is_pro=False):
         st.markdown('</div>', unsafe_allow_html=True)
     else:
         # ── REPORT DISPLAY — dark navy, gold accents, no white boxes ──
-        html = f"""
-        <div style="
-            background: #04080f;
-            border: 1px solid rgba(245,200,66,0.2);
-            border-radius: 16px;
-            padding: 44px 52px;
-            margin-top: 8px;
-            box-shadow: 0 4px 32px rgba(0,0,0,0.3);
-        ">
-            <div style="
-                font-size: 10px; font-weight: 700; color: #f5c842;
-                letter-spacing: 4px; text-transform: uppercase;
-                margin-bottom: 12px;
-            ">Scout IQ·FC &nbsp;—&nbsp; {"Pro Performance Audit" if is_pro else "Youth Scouting Report"}</div>
-            <div style="
-                font-family: 'Playfair Display', serif;
-                font-size: 40px; font-weight: 700; color: #ffffff;
-                line-height: 1.1; letter-spacing: -0.5px;
-                margin-bottom: 8px;
-            ">{pname}</div>
-            <div style="font-size: 12px; color: rgba(255,255,255,0.35); margin-bottom: 0;">{meta}</div>
-            <div style="border-top: 1px solid rgba(245,200,66,0.25); margin: 24px 0;"></div>
-        """
+        report_label = "Pro Performance Audit" if is_pro else "Youth Scouting Report"
+        html = f'<div style="background:#04080f;border:1px solid rgba(245,200,66,0.2);border-radius:16px;padding:40px 48px;margin-top:8px;box-shadow:0 4px 32px rgba(0,0,0,0.3);"><div style="font-size:10px;font-weight:700;color:#f5c842;letter-spacing:4px;text-transform:uppercase;margin-bottom:12px;">Scout IQ·FC — {report_label}</div><div style="font-family:Georgia,serif;font-size:36px;font-weight:700;color:#ffffff;line-height:1.1;margin-bottom:6px;">{pname}</div><div style="font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:0;">{meta}</div><div style="border-top:1px solid rgba(245,200,66,0.25);margin:20px 0;"></div>'
         in_exec = False
         for line in active.split("\n"):
             line = line.strip()
@@ -1088,29 +1056,13 @@ def render_report(text, pid, pname, meta, is_pro=False):
                     in_exec = False
                 html += '<div style="height:6px"></div>'
             elif line.upper().startswith("EXECUTIVE SUMMARY"):
-                html += """
-                <div style="
-                    background: rgba(245,200,66,0.06);
-                    border-left: 3px solid #f5c842;
-                    border-radius: 0 10px 10px 0;
-                    padding: 16px 20px;
-                    margin-bottom: 24px;
-                ">
-                <div style="font-size:9px;font-weight:700;color:#f5c842;letter-spacing:3px;text-transform:uppercase;margin-bottom:10px;">Executive Summary</div>
-                """
+                html += '<div style="background:rgba(245,200,66,0.06);border-left:3px solid #f5c842;border-radius:0 10px 10px 0;padding:16px 20px;margin-bottom:24px;"><div style="font-size:9px;font-weight:700;color:#f5c842;letter-spacing:3px;text-transform:uppercase;margin-bottom:10px;">Executive Summary</div>'
                 in_exec = True
             elif line[0].isdigit() and "." in line[:3]:
                 if in_exec:
                     html += '</div>'
                     in_exec = False
-                html += f"""
-                <div style="
-                    font-size: 9px; font-weight: 700; color: #f5c842;
-                    letter-spacing: 3px; text-transform: uppercase;
-                    margin: 28px 0 10px; padding-bottom: 8px;
-                    border-bottom: 1px solid rgba(255,255,255,0.07);
-                ">{line}</div>
-                """
+                html += f'<div style="font-size:9px;font-weight:700;color:#f5c842;letter-spacing:3px;text-transform:uppercase;margin:28px 0 10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.07);">{line}</div>'
             else:
                 clean = line.replace("**","").replace("--","").replace("#","")
                 if clean:
