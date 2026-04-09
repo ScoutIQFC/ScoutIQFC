@@ -837,78 +837,69 @@ def ai_report(prompt):
     return r.content[0].text
 
 def ai_clean_data(raw_text, data_type="youth"):
-    """Use Claude to parse any unstructured data and convert to platform format"""
-    claude = anthropic.Anthropic(api_key=get_api_key())
+    """Parse any unstructured data into platform format using Claude."""
+    api_key = get_api_key()
+    if not api_key:
+        return "[]"
+    client = anthropic.Anthropic(api_key=api_key)
     if data_type == "youth":
-        prompt = f"""You are a data parser for a football player tracking platform.
-        
-Convert the following raw data into a structured JSON format for youth players.
-The data might be messy, in any format (text, table paste, CSV-like, notes etc).
+        prompt = f"""You are a football data parser. Convert the raw data below into a JSON array for a youth player tracking platform.
 
-Raw data:
-{raw_text}
+The data can be in ANY format: match notes, WhatsApp messages, copied tables, handwritten notes, CSV text, anything.
+Extract every player you can find. Use sensible defaults for missing fields.
 
-Return ONLY a valid JSON array with no other text, no markdown, no explanation.
-Each player object must have these exact keys (use null for missing values):
-{{
-  "name": "Full Name",
-  "date_of_birth": "YYYY-MM-DD or null",
-  "position": "one of: Striker, Right Winger, Left Winger, Attacking Midfielder, Central Midfielder, Defensive Midfielder, Right Back, Left Back, Centre Back, Goalkeeper",
-  "club": "Academy or club name",
-  "dominant_foot": "Right or Left",
-  "age_group": "one of: U13, U14, U15, U16, U17, U18",
-  "nationality": "Country name or null",
-  "session_date": "YYYY-MM-DD or null",
-  "session_type": "match or training",
-  "minutes_played": 90,
-  "distance_covered_km": 8.5,
-  "sprint_count": 15,
-  "top_speed_kmh": 28.0,
-  "passes_completed": 25,
-  "passes_attempted": 32,
-  "dribbles_completed": 4,
-  "defensive_actions": 6,
-  "goals": 0,
-  "assists": 0,
-  "chances_created": 1,
-  "tackles_won": 3,
-  "coachability_rating": 7,
-  "attitude_score": 7,
-  "consistency_rating": 7,
-  "coach_notes": "any notes or empty string"
-}}
+Return ONLY a valid JSON array. Each object must have:
+name, date_of_birth (YYYY-MM-DD or null), position (Striker/Right Winger/Left Winger/Attacking Midfielder/Central Midfielder/Defensive Midfielder/Right Back/Left Back/Centre Back/Goalkeeper),
+club, dominant_foot (Right/Left), age_group (U13/U14/U15/U16/U17/U18), nationality,
+session_date (YYYY-MM-DD or null), session_type (match/training), minutes_played (integer),
+distance_covered_km (float), sprint_count (integer), top_speed_kmh (float),
+passes_completed (integer), passes_attempted (integer), dribbles_completed (integer),
+defensive_actions (integer), goals (integer), assists (integer), chances_created (integer),
+tackles_won (integer), coachability_rating (1-10), attitude_score (1-10),
+consistency_rating (1-10), coach_notes (string)
 
-If a value cannot be determined, use a sensible default (7 for ratings, 90 for minutes, etc).
-Return only the JSON array."""
-        prompt = f"""You are a strict football data parser. Convert raw player stats to JSON.
-
-CRITICAL RULES:
-1. PLAYER NAME: The person the stats belong to. If the data says "Bruno Fernandes Stats" or starts with a player name, that is the name field.
-2. TEAM: The club the player plays for (e.g. Manchester United, Arsenal). Never use the team name as the player name.
-3. "Assists" or "AST" = actual assists (integer). Do NOT use XA for this.
-4. "Goals" or "GLS" = actual goals (integer). Do NOT use XG for this.
-5. "XG" or "xG" = expected goals (float) - SEPARATE from goals.
-6. "XA" or "xA" = expected assists (float) - SEPARATE from assists.
-7. "Passes" = total passes, NOT assists.
-8. "Minutes Played" = minutes (integer).
-9. Map ONLY explicitly labeled fields. Never infer.
-
-Return ONLY a JSON array. Each object:
-name (player name), team (club name), position (Forward/Midfielder/Defender/Goalkeeper),
-nationality, age (integer), season (string), appearances (integer), minutes (integer),
-goals (integer), assists (integer), goals_per_90 (float), assists_per_90 (float),
-yellow_cards (integer), red_cards (integer), clean_sheets (integer), xg (float), xa (float)
-
-Use 0 for missing. No markdown. No explanation. JSON array only.
+Defaults: 7 for ratings, 90 for minutes, 8.0 for distance, right foot, U16.
+No markdown. No explanation. Return ONLY the JSON array.
 
 Raw data:
 {raw_text}"""
-    r = claude.messages.create(
+    else:
+        prompt = f"""You are a football data parser for a professional scouting platform.
+Convert the raw data below into a JSON array of professional player records.
+
+The data can be in ANY format: copied from websites, spreadsheets, PDF reports, stats tables, rough notes.
+If the data is about one player (e.g. "Bruno Fernandes Stats"), create one record for that player.
+
+IMPORTANT RULES:
+- name = the PLAYER's name (e.g. "Bruno Fernandes"), NOT the club name
+- team = the CLUB the player plays for (e.g. "Manchester United")
+- goals = actual goals scored (the "Goals" field) — NOT xG
+- assists = actual assists (the "Assists" field) — NOT xA
+- xg = expected goals (the "XG" or "xG" field) — separate from goals
+- xa = expected assists (the "XA" or "xA" field) — separate from assists
+- minutes = total minutes played (the "Minutes Played" or "Min" field)
+- appearances = number of matches played (the "Appearances" or "Apps" field)
+- Passes completed is NOT assists — it's passing volume
+
+Return ONLY a valid JSON array. Each object must have:
+name (string), team (string), position (Forward/Midfielder/Defender/Goalkeeper),
+nationality (string), age (integer), season (string),
+appearances (integer), minutes (integer), goals (integer), assists (integer),
+goals_per_90 (float), assists_per_90 (float),
+yellow_cards (integer), red_cards (integer), clean_sheets (integer),
+xg (float), xa (float)
+
+Use 0 for missing numeric values. No markdown. No explanation. Return ONLY the JSON array.
+
+Raw data:
+{raw_text}"""
+    r = client.messages.create(
         model="claude-opus-4-5",
         max_tokens=4000,
-        messages=[{"role": "user", "content": prompt}]
+        messages=[{{"role": "user", "content": prompt}}]
     )
     return r.content[0].text
+
 
 def to_pdf(name, meta, text, is_pro=False):
     buf = io.BytesIO()
