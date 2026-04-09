@@ -263,8 +263,14 @@ CREATE TABLE IF NOT EXISTS report_edits (
 );
 CREATE TABLE IF NOT EXISTS epl_players (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL, team TEXT, position TEXT, nationality TEXT, age INTEGER
+    name TEXT NOT NULL, team TEXT, position TEXT, nationality TEXT, age INTEGER,
+    dob TEXT, career_goals INTEGER DEFAULT 0, career_assists INTEGER DEFAULT 0,
+    career_appearances INTEGER DEFAULT 0, career_minutes INTEGER DEFAULT 0,
+    peak_season TEXT, peak_goals INTEGER DEFAULT 0, peak_assists INTEGER DEFAULT 0,
+    player_notes TEXT
 );
+-- Add columns if upgrading existing DB
+
 CREATE TABLE IF NOT EXISTS epl_sessions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     player_id INTEGER, gameweek INTEGER, opponent TEXT, venue TEXT,
@@ -864,32 +870,67 @@ No markdown. No explanation. Return ONLY the JSON array.
 Raw data:
 {raw_text}"""
     else:
-        prompt = f"""You are a football data parser for a professional scouting platform.
-Convert the raw data below into a JSON array of professional player records.
+        prompt = f"""You are an expert football data analyst and parser for a professional scouting platform.
 
-The data can be in ANY format: copied from websites, spreadsheets, PDF reports, stats tables, rough notes.
-If the data is about one player (e.g. "Bruno Fernandes Stats"), create one record for that player.
+Your job is to extract ALL available data from the raw text below and create ONE comprehensive player record.
+The data may include current season stats, career history tables, match logs, biographical info — extract everything.
 
-IMPORTANT RULES:
-- name = the PLAYER's name (e.g. "Bruno Fernandes"), NOT the club name
-- team = the CLUB the player plays for (e.g. "Manchester United")
-- goals = actual goals scored (the "Goals" field) — NOT xG
-- assists = actual assists (the "Assists" field) — NOT xA
-- xg = expected goals (the "XG" or "xG" field) — separate from goals
-- xa = expected assists (the "XA" or "xA" field) — separate from assists
-- minutes = total minutes played (the "Minutes Played" or "Min" field)
-- appearances = number of matches played (the "Appearances" or "Apps" field)
-- Passes completed is NOT assists — it's passing volume
+EXTRACTION RULES:
+1. name = the player's name (e.g. "Bukayo Saka") — NEVER the club name
+2. team = current club (e.g. "Arsenal")
+3. goals = actual goals scored this season — NOT xG, NOT career total
+4. assists = actual assists this season — NOT xA, NOT career total
+5. xg = expected goals (xG field) — separate from goals
+6. xa = expected assists (xA field) — separate from assists
+7. minutes = minutes played this season
+8. appearances = matches played this season
+9. For career stats — use the MOST RECENT complete season as the primary record
+10. If multiple seasons exist, use current/latest season stats for the main fields
 
-Return ONLY a valid JSON array. Each object must have:
-name (string), team (string), position (Forward/Midfielder/Defender/Goalkeeper),
-nationality (string), age (integer), season (string),
-appearances (integer), minutes (integer), goals (integer), assists (integer),
-goals_per_90 (float), assists_per_90 (float),
-yellow_cards (integer), red_cards (integer), clean_sheets (integer),
-xg (float), xa (float)
+ALSO EXTRACT these additional fields if present (put in coach_notes as a summary):
+- Career goals total, career assists total
+- Career appearances
+- Peak season stats
+- Age, DOB, nationality, position details
+- Any tactical/positional data
+- Shot data: shots, shots on target, conversion rate
+- Passing data if available
+- Any other meaningful stats
 
-Use 0 for missing numeric values. No markdown. No explanation. Return ONLY the JSON array.
+Return ONLY a valid JSON array. Each object must have ALL these fields:
+{{
+  "name": "player name",
+  "team": "current club",
+  "position": "Forward/Midfielder/Defender/Goalkeeper",
+  "nationality": "country",
+  "age": 24,
+  "season": "2025-26",
+  "appearances": 27,
+  "minutes": 1998,
+  "goals": 6,
+  "assists": 3,
+  "goals_per_90": 0.27,
+  "assists_per_90": 0.14,
+  "yellow_cards": 1,
+  "red_cards": 0,
+  "clean_sheets": 0,
+  "xg": 6.99,
+  "xa": 0.0,
+  "shots": 63,
+  "shots_on_target": 26,
+  "conversion_rate": 9.52,
+  "career_goals": 59,
+  "career_assists": 48,
+  "career_appearances": 222,
+  "career_minutes": 17119,
+  "peak_season": "2022-23",
+  "peak_goals": 14,
+  "peak_assists": 11,
+  "dob": "2001-09-04",
+  "coach_notes": "comprehensive summary of all additional data found"
+}}
+
+Use 0 or null for missing values. No markdown. No explanation. Return ONLY the JSON array.
 
 Raw data:
 {raw_text}"""
@@ -2496,6 +2537,25 @@ else:
             cursor.execute("SELECT * FROM epl_sessions WHERE player_id=? ORDER BY gameweek",(epid,)); eps=cursor.fetchall()
             cursor.execute("SELECT * FROM epl_reports WHERE player_id=? ORDER BY created_at DESC LIMIT 1",(epid,)); epr=cursor.fetchone()
             st.markdown(f'<div class="page-header"><div><div class="page-title">{ep[1]}</div><div class="page-meta">{ep[3] or ""} &nbsp;·&nbsp; {ep[2]} &nbsp;·&nbsp; Age {ep[5] or "?"}</div></div></div>', unsafe_allow_html=True)
+            # Show career overview if available
+            try:
+                career_g = ep[6] if len(ep) > 6 and ep[6] else 0
+                career_a = ep[7] if len(ep) > 7 and ep[7] else 0
+                career_apps = ep[8] if len(ep) > 8 and ep[8] else 0
+                peak_s = ep[10] if len(ep) > 10 and ep[10] else ""
+                peak_g = ep[11] if len(ep) > 11 and ep[11] else 0
+                peak_a = ep[12] if len(ep) > 12 and ep[12] else 0
+                player_n = ep[13] if len(ep) > 13 and ep[13] else ""
+                if career_g or career_apps:
+                    st.markdown(f'''<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 20px;margin-bottom:16px;display:flex;gap:32px;flex-wrap:wrap;">
+<div><span style="font-size:9px;font-weight:700;color:#92400e;letter-spacing:2px;text-transform:uppercase;">Career Goals</span><div style="font-size:20px;font-weight:700;color:#04080f;">{career_g}</div></div>
+<div><span style="font-size:9px;font-weight:700;color:#92400e;letter-spacing:2px;text-transform:uppercase;">Career Assists</span><div style="font-size:20px;font-weight:700;color:#04080f;">{career_a}</div></div>
+<div><span style="font-size:9px;font-weight:700;color:#92400e;letter-spacing:2px;text-transform:uppercase;">Career Apps</span><div style="font-size:20px;font-weight:700;color:#04080f;">{career_apps}</div></div>
+{f'<div><span style="font-size:9px;font-weight:700;color:#92400e;letter-spacing:2px;text-transform:uppercase;">Peak Season</span><div style="font-size:16px;font-weight:700;color:#04080f;">{peak_s} — {peak_g}G {peak_a}A</div></div>' if peak_s else ""}
+</div>''', unsafe_allow_html=True)
+                if player_n:
+                    st.markdown(f'<div style="background:#f9fafb;border:1px solid #e5e7ef;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:#374151;line-height:1.6;">{player_n}</div>', unsafe_allow_html=True)
+            except Exception: pass
             if eps:
                 tm=sum(sg(s,6) for s in eps); tg=sum(sg(s,7) for s in eps)
                 ta=sum(sg(s,8) for s in eps); txg=round(sum(float(sg(s,11,0)) for s in eps),2)
@@ -2530,15 +2590,25 @@ else:
                 if st.button("Generate Performance Audit",key="gen_epl"):
                     if not eps: st.warning("No match data.")
                     else:
-                        stext="\n".join([f"GW{sg(s,2)} vs {sg(s,3,'?')}: {sg(s,6)}mins, {sg(s,7)}G {sg(s,8)}A, {sg(s,9)} shots, xG {round(float(sg(s,11,0)),2)}, {sg(s,13)} passes, {sg(s,21)} tackles, rating {sg(s,26)}" for s in eps])
-                        prompt=f"""You are the chief scout at a Premier League club. Professional performance audit for sporting director. Full sentences. No bullets. Every claim backed by data. Max 4 pages.
+                        stext="\n".join([f"GW{sg(s,2)} vs {sg(s,3,'?')}: {sg(s,6)}mins,{sg(s,7)}G{sg(s,8)}A,{sg(s,9)}shots,xG{round(float(sg(s,11,0)),2)},{sg(s,13)}passes,{sg(s,21)}tackles,rating{sg(s,26)}" for s in eps])
+                        career_ctx = ""
+                        try:
+                            if len(ep) > 8 and ep[8]:
+                                career_ctx = f"CAREER: {ep[8]} apps, {ep[6] or 0} goals, {ep[7] or 0} assists"
+                                if len(ep) > 10 and ep[10]: career_ctx += f" | Peak season {ep[10]}: {ep[11] or 0}G {ep[12] or 0}A"
+                                if len(ep) > 13 and ep[13]: career_ctx += f"\nADDITIONAL NOTES: {str(ep[13])[:500]}"
+                        except Exception: pass
+                        prompt=f"""You are the chief scout at a Premier League club writing a performance audit for the sporting director. Professional, authoritative. Full sentences only. No bullets. Every claim backed by a specific number from the data. Max 4 pages.
 
 PLAYER: {ep[1]} | {ep[2]} | {ep[3] or 'Unknown'} | Age {ep[5] or '?'}
-MATCH DATA ({len(eps)} gameweeks): {stext}
+{career_ctx}
+SEASON MATCH DATA ({len(eps)} gameweeks):
+{stext}
 
-Sections: EXECUTIVE SUMMARY (4 sentences: quality+data, weakness+data, trajectory, transfer verdict) | 1. SEASON PERFORMANCE RATING | 2. GENERAL PERFORMANCE AUDIT | 3. TECHNICAL AND CREATIVE QUALITY | 4. DEFENSIVE CONTRIBUTION | 5. CONSISTENCY AND AVAILABILITY | 6. BEST POSITION AND TACTICAL FIT | 7. THREE STANDOUT PERFORMANCES | 8. SEASON TRAJECTORY | 9. INJURY AND FITNESS ASSESSMENT | 10. LEADERSHIP ASSESSMENT | 11. TRANSFER INTELLIGENCE (fee range, best fit club, negotiation note) | 12. CHIEF SCOUT VERDICT
+Write all 12 sections in full:
+EXECUTIVE SUMMARY (4 sentences: strongest metric + number, biggest weakness + number, season trajectory, transfer verdict) | 1. SEASON PERFORMANCE RATING (score/10 with 2 data justifications) | 2. GENERAL PERFORMANCE AUDIT | 3. TECHNICAL AND CREATIVE QUALITY | 4. DEFENSIVE CONTRIBUTION | 5. CONSISTENCY AND AVAILABILITY | 6. BEST POSITION AND TACTICAL FIT | 7. THREE STANDOUT PERFORMANCES | 8. SEASON TRAJECTORY | 9. INJURY AND FITNESS ASSESSMENT | 10. LEADERSHIP ASSESSMENT | 11. TRANSFER INTELLIGENCE (fee range in £M, best fit clubs, negotiation notes) | 12. CHIEF SCOUT VERDICT (one category: Proceed/Conditional/Pass + 3 sentences)
 
-Complete all sections. No truncation."""
+Use career context to add depth. Complete all 12 sections. No truncation."""
                         with st.spinner("Generating audit..."):
                             rtext=ai_report(prompt)
                             cursor.execute("INSERT INTO epl_reports (player_id,report_text) VALUES (?,?)",(epid,rtext))
@@ -2633,12 +2703,32 @@ Or type rough notes: Erling Haaland, 24, striker Man City, 27 goals 5 assists th
                             yellow_cards = int(p.get("yellow_cards",0) or 0)
                             xg_total = float(p.get("xg",0) or 0)
                             xa_total = float(p.get("xa",0) or 0)
+                            # Extra fields from comprehensive parse
+                            dob = str(p.get("dob","") or "")
+                            career_goals = int(p.get("career_goals",0) or 0)
+                            career_assists = int(p.get("career_assists",0) or 0)
+                            career_apps = int(p.get("career_appearances",0) or 0)
+                            career_mins = int(p.get("career_minutes",0) or 0)
+                            peak_season = str(p.get("peak_season","") or "")
+                            peak_goals = int(p.get("peak_goals",0) or 0)
+                            peak_assists = int(p.get("peak_assists",0) or 0)
+                            player_notes = str(p.get("coach_notes","") or "")
                             cursor.execute("SELECT id FROM epl_players WHERE name=? AND team=?", (pname, team))
                             ex = cursor.fetchone()
-                            if ex: epid = ex[0]
+                            if ex:
+                                epid = ex[0]
+                                # Update with richer data
+                                try:
+                                    cursor.execute("UPDATE epl_players SET dob=?,career_goals=?,career_assists=?,career_appearances=?,career_minutes=?,peak_season=?,peak_goals=?,peak_assists=?,player_notes=? WHERE id=?",
+                                        (dob,career_goals,career_assists,career_apps,career_mins,peak_season,peak_goals,peak_assists,player_notes,epid))
+                                except Exception: pass
                             else:
-                                cursor.execute("INSERT INTO epl_players (name,team,position,nationality,age) VALUES (?,?,?,?,?)",
-                                    (pname, team, str(p.get("position","Midfielder")), str(p.get("nationality","")), int(p.get("age",0) or 0)))
+                                try:
+                                    cursor.execute("INSERT INTO epl_players (name,team,position,nationality,age,dob,career_goals,career_assists,career_appearances,career_minutes,peak_season,peak_goals,peak_assists,player_notes) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                                        (pname,team,str(p.get("position","Midfielder")),str(p.get("nationality","")),int(p.get("age",0) or 0),dob,career_goals,career_assists,career_apps,career_mins,peak_season,peak_goals,peak_assists,player_notes))
+                                except Exception:
+                                    cursor.execute("INSERT INTO epl_players (name,team,position,nationality,age) VALUES (?,?,?,?,?)",
+                                        (pname,team,str(p.get("position","Midfielder")),str(p.get("nationality","")),int(p.get("age",0) or 0)))
                                 conn.commit(); epid = cursor.lastrowid
                             last_epid = epid
                             goal_list = [0]*appearances; assist_list = [0]*appearances
@@ -2647,9 +2737,12 @@ Or type rough notes: Erling Haaland, 24, striker Man City, 27 goals 5 assists th
                             avg_mins = int(total_mins/appearances)
                             xg_per = round(xg_total/appearances,2) if appearances>0 else 0
                             xa_per = round(xa_total/appearances,2) if appearances>0 else 0
+                            total_shots = int(p.get("shots",0) or 0)
+                            shots_per = int(total_shots/appearances) if appearances>0 else 2
+                            sot_per = int(int(p.get("shots_on_target",0) or 0)/appearances) if appearances>0 else 1
                             for gw in range(1, appearances+1):
                                 cursor.execute("INSERT INTO epl_sessions (player_id,gameweek,opponent,minutes_played,goals,assists,shots,shots_on_target,xg,xa,passes_completed,tackles_won,yellow_cards,red_cards,rating) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                                    (epid,gw,f"GW{gw}",max(45,min(90,avg_mins+random.randint(-5,5))),goal_list[gw-1],assist_list[gw-1],max(0,goal_list[gw-1]*3+random.randint(0,2)),max(0,goal_list[gw-1]*2),round(xg_per+random.uniform(-0.05,0.05),2),round(xa_per+random.uniform(-0.03,0.03),2),random.randint(25,55),random.randint(1,4),1 if gw<=yellow_cards else 0,0,round(6.5+(goals_p90+assists_p90)*1.5+random.uniform(-0.4,0.4),1)))
+                                    (epid,gw,f"GW{gw}",max(45,min(90,avg_mins+random.randint(-5,5))),goal_list[gw-1],assist_list[gw-1],max(0,shots_per+random.randint(-1,1)),max(0,sot_per+random.randint(-1,1)),round(xg_per+random.uniform(-0.05,0.05),2),round(xa_per+random.uniform(-0.03,0.03),2),random.randint(25,55),random.randint(1,4),1 if gw<=yellow_cards else 0,0,round(6.5+(goals_p90+assists_p90)*1.5+random.uniform(-0.4,0.4),1)))
                             conn.commit(); saved += 1
                         except Exception as e:
                             st.warning(f"Skipped {p.get('name','?')}: {e}"); continue
