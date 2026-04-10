@@ -1072,111 +1072,84 @@ def ai_clean_data(raw_text, data_type="youth"):
         prompt = (
             "You are a football data analyst. Extract a TEAM profile from the raw data below.\n"
             "Data may come from FBref, Opta Analyst, FootyStats, Premier League, WhoScored, Sofascore, Transfermarkt.\n\n"
-            "Extract ALL available team stats. Return ONE JSON object in an array:\n"
-            "{\n"
-            '  "team_name": "Arsenal",\n'
-            '  "league": "Premier League",\n'
-            '  "season": "2025-26",\n'
-            '  "manager": "Mikel Arteta",\n'
-            '  "matches_played": 27,\n'
-            '  "wins": 18, "draws": 5, "losses": 4,\n'
-            '  "goals_for": 54, "goals_against": 22, "goal_difference": 32,\n'
-            '  "points": 59,\n'
-            '  "xg_for": 52.1, "xg_against": 24.3,\n'
-            '  "possession_pct": 56.2,\n'
-            '  "shots_per_game": 14.2, "shots_on_target_per_game": 5.8,\n'
-            '  "pass_accuracy_pct": 87.3,\n'
-            '  "clean_sheets": 9,\n'
-            '  "yellow_cards": 38, "red_cards": 2,\n'
-            '  "top_scorer": "Kai Havertz", "top_scorer_goals": 14,\n'
-            '  "top_assister": "Bukayo Saka", "top_assister_assists": 9,\n'
-            '  "form": "WWDWL",\n'
-            '  "home_record": "10W 2D 2L", "away_record": "8W 3D 2L",\n'
-            '  "notes": "all additional stats, historical seasons, squad depth, any other data found"\n'
-            "}\n\n"
-            "Use 0 for missing numerics. Extract whatever is available.\n"
-            "No markdown. No explanation. JSON array only.\n\nRaw data:\n"
+            "Return ONE JSON object in an array:\n"
+            "{team_name, league, season, manager, matches_played, wins, draws, losses,\n"
+            "goals_for, goals_against, xg_for, xg_against, possession_pct, pass_accuracy_pct,\n"
+            "shots_per_game, clean_sheets, yellow_cards, red_cards,\n"
+            "top_scorer, top_scorer_goals, top_assister, top_assister_assists, form, notes}\n\n"
+            "Use 0 for missing numerics. No markdown. JSON array only.\n\nRaw data:\n"
         ) + raw_text
 
     else:
-        # PLAYER - knows all major football data sources
+        # Multi-source player parser with table detection
         prompt = (
-            "You are a senior football data analyst. Parse the raw player data below with complete precision.\n\n"
+            "You are a senior football data analyst. Parse the raw player data with MAXIMUM PRECISION.\n\n"
 
-            "== SOURCE RECOGNITION ==\n"
-            "Identify which source this data comes from and apply the correct parsing logic:\n\n"
+            "== STEP 1: IDENTIFY WHAT TABLES ARE PRESENT ==\n"
+            "FBref has MANY different tables on a player page. Each has different columns.\n"
+            "You MUST identify which tables are in the pasted data:\n\n"
+            "TABLE TYPE: STANDARD STATS (has Gls + Ast columns)\n"
+            "  Headers contain: MP | Starts | Min | Gls | Ast | G+A | CrdY | CrdR\n"
+            "  THIS is the table with goals and assists. USE THIS for goals/assists.\n\n"
+            "TABLE TYPE: PLAYING TIME (does NOT have goals/assists)\n"
+            "  Headers contain: Starts | Subs | Team Success | Mn/MP | Min% | PPM | On-Off\n"
+            "  This table has NO goals, NO assists, NO xG. Do NOT read goals from here.\n"
+            "  If ONLY a playing time table is present, set goals=null, assists=null.\n\n"
+            "TABLE TYPE: SHOOTING (has Sh + SoT + xG)\n"
+            "  Headers: Sh | SoT | SoT% | Sh/90 | G/Sh | xG | npxG\n"
+            "  Use this for shots, shots_on_target, xG.\n\n"
+            "TABLE TYPE: PASSING (has Cmp + Att + Ast)\n"
+            "  Headers: Cmp | Att | Cmp% | Ast | xAG | KP | PrgP\n\n"
+            "TABLE TYPE: OPTA ANALYST\n"
+            "  Shows individual metrics with labels: 'Goals', 'Assists', 'xG', 'xA', 'Key Passes'\n"
+            "  Sometimes shows percentile pizza/radar (numbers 0-100 = percentiles, NOT raw stats).\n"
+            "  If you see 'Goals: 6' and '87th percentile' separately, Goals=6 is the raw stat.\n\n"
+            "TABLE TYPE: FOOTYSTATS\n"
+            "  Shows per-90 stats: Goals/90, Assists/90, Shots/90, xG/90\n"
+            "  Multiply by 90s played to get season totals if needed.\n\n"
+            "TABLE TYPE: PREMIER LEAGUE OFFICIAL\n"
+            "  Shows: Appearances | Goals | Assists | Passes | Passes per Match | Shots | Shots on Target\n\n"
+            "TABLE TYPE: WHOSCORED / SOFASCORE\n"
+            "  Shows per-game averages and match ratings (1-10 scale).\n\n"
 
-            "SOURCE A: FBref (fbref.com)\n"
-            "Standard stats table columns (exact order when copy-pasted):\n"
-            "Season | Age | Squad | Country | Comp | LgRank | MP | Starts | Min | 90s | Gls | Ast | G+A | G-PK | PK | PKatt | CrdY | CrdR | [per-90: Gls | Ast | G+A | G-PK | G+A-PK]\n"
-            "Shooting table: Sh | SoT | SoT% | Sh/90 | SoT/90 | G/Sh | G/SoT | Dist | FK | PK | PKatt | xG | npxG | npxG/Sh | G-xG\n"
-            "Passing table: Cmp | Att | Cmp% | TotDist | PrgDist | ... | Ast | xAG | xA | KP | 1/3 | PPA | CrsPA | PrgP\n"
-            "KEY FBref columns: MP=appearances, Min=minutes, Gls=goals, Ast=assists, CrdY=yellows, CrdR=reds, Sh=shots, SoT=shots on target, xG=expected goals\n\n"
+            "== STEP 2: EXTRACT FROM THE RIGHT TABLE ==\n"
+            "For GOALS: use Gls column from Standard Stats table current season row ONLY.\n"
+            "  Current season = the row with the highest year (e.g. 2025-26 or 2025-2026).\n"
+            "  Do NOT use the Playing Time table - it has no goals.\n"
+            "  Do NOT use career total rows ('Total' / '8 Seasons' rows).\n"
+            "For ASSISTS: use Ast column from Standard Stats table current season row.\n"
+            "For XG: use xG column from Shooting table (decimal like 6.99).\n"
+            "For SHOTS: use Sh column from Shooting table (integer like 63).\n"
+            "For MINUTES: use Min column from any table (strip commas: 2,434 = 2434).\n"
+            "For APPEARANCES: use MP column.\n"
+            "For CARDS: use CrdY (yellow) and CrdR (red) from Standard Stats table.\n\n"
 
-            "SOURCE B: Opta Analyst (theanalyst.com)\n"
-            "Uses Opta's proprietary metrics. Key fields when pasted:\n"
-            "Goals, Assists, xG (expected goals), xA (expected assists), Shots, Shots on Target,\n"
-            "Key Passes, Chances Created, Dribbles (Attempted/Successful), Touches, Passes (Attempted/Completed),\n"
-            "Tackles (Won/Attempted), Interceptions, Clearances, Aerial Duels Won%,\n"
-            "Progressive Carries, Progressive Passes, Penalty Area Touches\n"
-            "Opta radars show PERCENTILE rankings (0-100) vs league peers — do NOT confuse percentile with raw stat.\n"
-            "If you see numbers like '87th' or '%ile' they are percentiles, not goals/assists.\n\n"
+            "== STEP 3: IF STATS ARE MISSING ==\n"
+            "If the pasted data is ONLY the Playing Time table (contains Starts/Subs/PPM but no Gls/Ast):\n"
+            "  Set goals=0, assists=0, shots=0, xg=0\n"
+            "  Set coach_notes to explain: 'PLAYING TIME TABLE ONLY: paste Standard Stats table for goals/assists/cards, paste Shooting table for xG/shots'\n"
+            "  Still extract: minutes, appearances, season, team, name from the Playing Time data.\n\n"
+            "If the data is a FULL PLAYER PAGE with MULTIPLE TABLES:\n"
+            "  Find the Standard Stats table (has Gls column) and use the current season row.\n"
+            "  Find the Shooting table (has Sh, xG columns) for shot/xG data.\n"
+            "  Ignore the Playing Time, GCA, Possession, Misc tables for goals/assists.\n\n"
 
-            "SOURCE C: FootyStats (footystats.org)\n"
-            "Player stats when pasted: Goals, Assists, xG, Minutes, Appearances, Yellow Cards, Red Cards,\n"
-            "Shots Per 90, Shots on Target Per 90, Key Passes Per 90, Dribbles Per 90,\n"
-            "Tackles Per 90, Interceptions Per 90, Aerial Wins Per 90,\n"
-            "Pass Accuracy%, Dribble Success%, Clean Sheet% (for GKs/defenders)\n"
-            "FootyStats uses per-90 normalised stats extensively. Raw totals are also shown.\n\n"
+            "== STEP 4: CAREER DATA ==\n"
+            "From the Standard Stats totals row ('X Seasons' / 'Total'):\n"
+            "  career_goals = Gls column of totals row\n"
+            "  career_assists = Ast column of totals row\n"
+            "  career_appearances = MP column of totals row\n"
+            "  career_minutes = Min column of totals row\n"
+            "Peak season = the individual season row with the highest Gls value.\n"
+            "Put full season-by-season history in coach_notes.\n\n"
 
-            "SOURCE D: Premier League Official (premierleague.com)\n"
-            "Fields: Appearances, Goals, Assists, Passes, Passes per Match, Big Chances Created,\n"
-            "Shots, Shots on Target, Goal Involvement, Minutes Played, Yellow Cards, Red Cards\n\n"
-
-            "SOURCE E: WhoScored / Sofascore / Flashscore\n"
-            "WhoScored: rating (1-10), Goals, Assists, Key Passes, Dribbles, Tackles, Interceptions,\n"
-            "Shots per game, Passes per game, Dispossessed per game, Fouls per game, WhoScored rating\n"
-            "Sofascore: Goals, Assists, xG, xA, rating, Touches, Key Passes, Dribbles Succeeded,\n"
-            "Accurate Passes %, Tackles, Interceptions, Clearances, Duels Won\n\n"
-
-            "SOURCE F: Transfermarkt (transfermarkt.com)\n"
-            "Market value, contract details, transfer history, biographical info, appearances, goals, assists per season\n\n"
-
-            "== EXTRACTION RULES (apply regardless of source) ==\n"
-            "name = player name ONLY (never the club/team)\n"
-            "team = current club\n"
-            "goals = actual goals scored this season (integer 0-50, never xG, never career total)\n"
-            "assists = actual assists this season (integer 0-30, never xA, never career total)\n"
-            "xg = expected goals (decimal float like 6.99, NEVER equals goals exactly)\n"
-            "xa = expected assists (decimal float, separate from assists)\n"
-            "shots = total shots taken this season (integer, NOT assists, NOT xG)\n"
-            "shots_on_target = shots on target this season\n"
-            "minutes = total minutes played this season (integer 0-4000, remove commas)\n"
-            "appearances = matches played this season\n"
-            "yellow_cards = yellow cards this season\n"
-            "red_cards = red cards this season\n"
-            "career_goals = ALL-TIME goals across career (must be >= season goals)\n"
-            "career_assists = ALL-TIME assists across career (must be >= season assists)\n"
-            "career_appearances = ALL-TIME apps (must be >= season apps)\n"
-            "career_minutes = ALL-TIME minutes (must be >= season minutes)\n"
-            "peak_season = the season year with most goals\n\n"
-
-            "ADDITIONAL STATS to extract if present:\n"
-            "key_passes, progressive_passes, dribbles_completed, dribble_success_pct,\n"
-            "tackles, interceptions, aerial_duels_won_pct, pass_accuracy_pct,\n"
-            "chances_created, penalty_area_touches, progressive_carries,\n"
-            "whoscored_rating, sofascore_rating, fouls_committed,\n"
-            "formation_usage (e.g. '64% RW in 4-3-3'), market_value\n"
-            "Put ALL of these in coach_notes as: 'STAT: value, STAT: value, ...'\n"
-            "Also put the FULL season-by-season career history table in coach_notes.\n\n"
-
-            "== SANITY CHECKS ==\n"
-            "goals: 0-50 per season. If > 50, you read career total — use season row only.\n"
-            "assists: 0-30 per season. If > 30, you read career total.\n"
-            "shots: 0-200 per season. shots(63) != assists(3). Completely different fields.\n"
-            "xg: decimal float, never exact integer, never = goals.\n"
-            "minutes: 0-4000 per season. 17,119 = career total, not season.\n"
-            "career_goals >= season goals. career_minutes >= season minutes.\n\n"
+            "== STEP 5: SANITY CHECKS ==\n"
+            "goals: 0-50 per season. If you got 63, you read shots. If you got 59, career total.\n"
+            "assists: 0-30 per season. If you got 48, career total.\n"
+            "shots: 0-200 per season. shots(63) is NEVER assists(3).\n"
+            "xg: decimal float 0-25, never exact integer matching goals.\n"
+            "minutes: 0-4000 per season. 17,119 = career total.\n"
+            "career values must be >= single season values.\n\n"
 
             "== OUTPUT ==\n"
             "Return ONLY a valid JSON array with ONE object:\n"
@@ -4505,19 +4478,7 @@ Complete all sections. No truncation."""
 
             "pro_raw",
 
-            placeholder="""Paste anything here. Examples:
-
-
-
-Player: Bruno Fernandes | Club: Man United | Pos: Midfielder | Age: 29
-
-Season 2023/24: 35 apps, 1800 mins, 10 goals, 8 assists, 3 yellows
-
-
-
-Or paste a full copied table from FBref or WhoScored...
-
-Or type rough notes: Erling Haaland, 24, striker Man City, 27 goals 5 assists this season""",
+            placeholder="Paste player stats from FBref, Opta Analyst, FootyStats, WhoScored, Sofascore, PL Official or Transfermarkt.\n\nFBref tip: For goals/assists paste the Standard Stats table (has Gls/Ast/CrdY columns). For xG/shots paste the Shooting table (has Sh/xG). The Playing Time table has NO goals data.\n\nYou can paste an entire player page and Claude will find the right tables automatically.",
 
             height=220,
 
@@ -4567,7 +4528,17 @@ Or type rough notes: Erling Haaland, 24, striker Man City, 27 goals 5 assists th
 
             pro_players = st.session_state["pro_ai_parsed"]
 
-            st.success(f"Claude found {len(pro_players)} player(s) - confirm to save:")
+            # Check if key stats are missing — guide the user
+            _p0 = pro_players[0] if pro_players else {}
+            _missing = []
+            if not _p0.get("goals") and not _p0.get("shots"): _missing.append("goals & shots (need Standard Stats or Shooting table)")
+            if not _p0.get("xg"): _missing.append("xG (need Shooting table)")
+            if not _p0.get("yellow_cards") and not _p0.get("cards"): _missing.append("cards (need Standard Stats table)")
+
+            if _missing:
+                st.warning(f"⚠️ Some stats could not be found in the pasted data. Missing: {', '.join(_missing)}\n\nTip: On FBref, paste the **Standard Stats** table (has Gls/Ast/CrdY columns) + the **Shooting** table (has Sh/xG columns). The Playing Time table alone has no goals/assists data.")
+            else:
+                st.success(f"Claude found {len(pro_players)} player(s) - confirm to save:")
 
             import pandas as _pd
 
