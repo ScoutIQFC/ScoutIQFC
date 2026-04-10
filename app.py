@@ -89,131 +89,60 @@ def check_password():
         st.session_state["show_forgot"] = False
 
     st.markdown("""
-
 <style>
-
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,400&display=swap');
-
 html,body,[class*="css"],.stApp{background:#04080f !important;font-family:'Outfit',sans-serif !important;}
-
 #MainMenu,footer,header{visibility:hidden !important;}
-
 .block-container{padding:0 !important;max-width:100% !important;}
-
 .stApp{min-height:100vh;}
-
-
-
 /* Background */
-
 .lbg{position:fixed;top:0;left:0;right:0;bottom:0;z-index:0;
-
 background:radial-gradient(ellipse 80% 60% at 10% 10%,rgba(20,45,120,0.5) 0%,transparent 60%),
-
 radial-gradient(ellipse 60% 70% at 90% 90%,rgba(8,16,60,0.55) 0%,transparent 60%),#04080f;}
-
 .lbg::before{content:'';position:absolute;inset:0;
-
 background-image:linear-gradient(rgba(255,255,255,0.022) 1px,transparent 1px),
-
 linear-gradient(90deg,rgba(255,255,255,0.022) 1px,transparent 1px);
-
 background-size:58px 58px;}
-
-
-
 /* Inputs - WHITE bg, DARK text */
-
 .stTextInput label,.stSelectbox label,.stTextArea label{display:none !important;}
-
 .stTextInput > div > div{background:#ffffff !important;border:1.5px solid #e2e8f0 !important;border-radius:10px !important;}
-
 .stTextInput > div > div:focus-within{background:#ffffff !important;border-color:#f5c842 !important;box-shadow:0 0 0 3px rgba(245,200,66,0.15) !important;}
-
 .stTextInput input{color:#0d1117 !important;font-family:'Outfit',sans-serif !important;font-size:14px !important;padding:12px 14px !important;}
-
 .stTextInput input::placeholder{color:#94a3b8 !important;}
-
 .stTextArea textarea{color:#0d1117 !important;background:#ffffff !important;border:1.5px solid #e2e8f0 !important;border-radius:10px !important;font-size:13px !important;}
-
 .stSelectbox > div > div{background:#ffffff !important;border:1.5px solid #e2e8f0 !important;border-radius:10px !important;color:#0d1117 !important;}
-
-
-
 /* ALL buttons default - pill shape, subtle */
-
 .stButton > button{background:rgba(255,255,255,0.08) !important;color:rgba(255,255,255,0.7) !important;
-
 border:1px solid rgba(255,255,255,0.13) !important;border-radius:100px !important;
-
 font-family:'Outfit',sans-serif !important;font-size:12px !important;font-weight:600 !important;
-
 padding:9px 16px !important;width:100% !important;margin-top:0 !important;
-
 box-shadow:none !important;letter-spacing:0.2px !important;}
-
 .stButton > button:hover{background:rgba(255,255,255,0.13) !important;color:#fff !important;transform:none !important;box-shadow:none !important;}
-
 .stButton > button:focus,.stButton > button:active{box-shadow:none !important;outline:none !important;}
-
-
-
 /* Gold primary CTA */
-
 .btn-gold .stButton > button{background:linear-gradient(135deg,#f5c842,#e6a817) !important;
-
 color:#04080f !important;border:none !important;font-weight:700 !important;
-
 font-size:14px !important;padding:13px 0 !important;margin-top:16px !important;
-
 box-shadow:0 4px 20px rgba(245,200,66,0.2) !important;}
-
 .btn-gold .stButton > button:hover{box-shadow:0 6px 28px rgba(245,200,66,0.3) !important;transform:translateY(-1px) !important;}
-
-
-
 /* Ghost subtle */
-
 .btn-ghost .stButton > button{background:transparent !important;color:rgba(255,255,255,0.35) !important;
-
 border:1px solid rgba(255,255,255,0.08) !important;font-size:11px !important;padding:8px 0 !important;margin-top:6px !important;}
-
 .btn-ghost .stButton > button:hover{color:rgba(255,255,255,0.65) !important;background:rgba(255,255,255,0.04) !important;}
-
-
-
 /* Divider row buttons */
-
 .btn-row .stButton > button{font-size:12px !important;padding:9px 12px !important;margin-top:0 !important;}
-
-
-
 /* Error/success */
-
 .epill{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:8px;
-
 padding:9px 14px;font-size:12px;color:#fca5a5;text-align:center;margin-bottom:12px;}
-
 .spill{background:rgba(22,163,74,0.1);border:1px solid rgba(22,163,74,0.25);border-radius:8px;
-
 padding:9px 14px;font-size:12px;color:#86efac;text-align:center;margin-bottom:12px;}
-
-
-
 /* Stats */
-
 .lstats{display:flex;justify-content:center;gap:32px;margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.05);}
-
 .lstat{text-align:center;}
-
 .lstat-n{font-size:17px;font-weight:700;color:#f5c842;line-height:1;}
-
 .lstat-l{font-size:9px;color:rgba(255,255,255,0.2);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;}
-
 </style>
-
 <div class="lbg"></div>
-
     """, unsafe_allow_html=True)
 
     tab = st.session_state.get("login_tab", "signin")
@@ -231,21 +160,13 @@ padding:9px 14px;font-size:12px;color:#86efac;text-align:center;margin-bottom:12
             if tab == "demo_sent":
 
                 st.markdown("""
-
                 <div style="text-align:center;padding:60px 0;">
-
                     <div style="font-size:48px;margin-bottom:16px;">✅</div>
-
                     <div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:8px;">Request Received</div>
-
                     <div style="font-size:13px;color:rgba(255,255,255,0.4);line-height:1.7;margin-bottom:24px;">
-
                         Our team will be in touch within 24 hours.
-
                     </div>
-
                 </div>
-
                 """, unsafe_allow_html=True)
 
                 st.markdown('<div class="btn-ghost">', unsafe_allow_html=True)
@@ -259,21 +180,13 @@ padding:9px 14px;font-size:12px;color:#86efac;text-align:center;margin-bottom:12
             else:
 
                 st.markdown("""
-
                 <div style="text-align:center;margin-bottom:28px;">
-
                     <div style="font-family:'Playfair Display',serif;font-size:36px;color:#fff;font-weight:700;letter-spacing:-0.5px;">
-
                         Scout IQ·<span style="color:#f5c842;font-style:italic;">FC</span>
-
                     </div>
-
                     <div style="font-size:16px;font-weight:600;color:rgba(255,255,255,0.7);margin-top:12px;">Request a Demo</div>
-
                     <div style="font-size:12px;color:rgba(255,255,255,0.35);margin-top:4px;">Get a personalised walkthrough within 24 hours</div>
-
                 </div>
-
                 """, unsafe_allow_html=True)
 
                 st.markdown('<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Full Name</div>', unsafe_allow_html=True)
@@ -327,17 +240,11 @@ padding:9px 14px;font-size:12px;color:#86efac;text-align:center;margin-bottom:12
             st.markdown('<div style="position:relative;z-index:2;padding-top:80px;text-align:center;">', unsafe_allow_html=True)
 
             st.markdown("""
-
             <div style="font-size:48px;margin-bottom:16px;">🚀</div>
-
             <div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:8px;">Account Creation Coming Soon</div>
-
             <div style="font-size:13px;color:rgba(255,255,255,0.4);line-height:1.7;margin-bottom:28px;">
-
                 Request a demo to get early access to Scout IQ·FC.
-
             </div>
-
             """, unsafe_allow_html=True)
 
             st.markdown('<div class="btn-gold">', unsafe_allow_html=True)
@@ -367,21 +274,13 @@ padding:9px 14px;font-size:12px;color:#86efac;text-align:center;margin-bottom:12
         # Brand — compact
 
         st.markdown("""
-
         <div style="text-align:center;padding-top:36px;margin-bottom:28px;">
-
             <div style="font-size:10px;font-weight:600;letter-spacing:4px;color:rgba(245,200,66,0.6);text-transform:uppercase;margin-bottom:8px;">Talent Intelligence Platform</div>
-
             <div style="font-family:'Playfair Display',serif;font-size:48px;font-weight:700;color:#fff;line-height:1;letter-spacing:-1px;margin-bottom:8px;">
-
                 Scout IQ·<span style="color:#f5c842;font-style:italic;">FC</span>
-
             </div>
-
             <div style="font-size:11px;font-weight:500;color:rgba(255,255,255,0.38);letter-spacing:4px;text-transform:uppercase;">Where Talent Is Unearthed</div>
-
         </div>
-
         """, unsafe_allow_html=True)
 
         # Login form - no card, just the fields
@@ -461,19 +360,12 @@ padding:9px 14px;font-size:12px;color:#86efac;text-align:center;margin-bottom:12
         # Stats strip
 
         st.markdown("""
-
         <div class="lstats">
-
             <div class="lstat"><div class="lstat-n">100+</div><div class="lstat-l">Players</div></div>
-
             <div class="lstat"><div class="lstat-n">AI</div><div class="lstat-l">Reports</div></div>
-
             <div class="lstat"><div class="lstat-n">3+</div><div class="lstat-l">Academies</div></div>
-
             <div class="lstat"><div class="lstat-n">Beta</div><div class="lstat-l">Live</div></div>
-
         </div>
-
         """, unsafe_allow_html=True)
 
         st.markdown('</div>', unsafe_allow_html=True)
@@ -641,959 +533,449 @@ for k, v in {
         st.session_state[k] = v
 
 st.markdown("""
-
 <style>
-
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap');
-
-
-
 /* ── RESET & BASE ── */
-
 *, *::before, *::after { box-sizing: border-box; }
-
 * { font-family: 'Outfit', sans-serif !important; }
-
 html, body, [class*="css"] { background: #f8f9fc !important; color: #0d1117; }
-
 #MainMenu, footer, header { visibility: hidden; }
-
 .stApp { background: #f8f9fc !important; }
-
 .block-container { padding: 0 2rem 2rem 2rem !important; max-width: 100% !important; }
-
-
-
 /* ── SIDEBAR ── */
-
 [data-testid="stSidebarCollapseButton"] { display: none !important; }
-
 [data-testid="collapsedControl"] { display: none !important; }
-
 [data-testid="stSidebar"] {
-
     transform: none !important;
-
     display: flex !important;
-
     visibility: visible !important;
-
     min-width: 260px !important;
-
     max-width: 260px !important;
-
     background: #04080f !important;
-
     box-shadow: 1px 0 0 rgba(255,255,255,0.04), 4px 0 32px rgba(0,0,0,0.4) !important;
-
 }
-
 [data-testid="stSidebar"] > div { padding: 0 !important; }
-
-
-
 /* Sidebar logo */
-
 .sb-logo {
-
     padding: 24px 20px 20px;
-
     border-bottom: 1px solid rgba(255,255,255,0.06);
-
 }
-
 .sb-logo-name {
-
     font-family: 'Playfair Display', serif !important;
-
     font-size: 20px; font-weight: 700; color: #ffffff;
-
     letter-spacing: -0.3px; line-height: 1;
-
 }
-
 .sb-logo-name .fc { color: #f5c842; font-style: italic; }
-
 .sb-logo-tag {
-
     font-size: 8px; font-weight: 500;
-
     color: rgba(255,255,255,0.3);
-
     letter-spacing: 3px; text-transform: uppercase;
-
     margin-top: 5px;
-
 }
-
-
-
 /* Sidebar sections */
-
 .sb-section {
-
     padding: 16px 20px 4px;
-
     font-size: 9px; font-weight: 700;
-
     color: rgba(255,255,255,0.2);
-
     letter-spacing: 3px; text-transform: uppercase;
-
 }
-
 .sb-divider { border: none; border-top: 1px solid rgba(255,255,255,0.05); margin: 6px 0; }
-
-
-
 /* Sidebar scrollable area */
-
 [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-
     overflow-y: auto !important;
-
     max-height: calc(100vh - 180px) !important;
-
 }
-
-
-
 /* Academy row hover effects */
-
 .academy-row { position: relative; }
-
 .academy-row:hover .academy-actions { opacity: 1 !important; }
-
 .academy-actions { opacity: 0; transition: opacity 0.2s; }
-
-
-
 /* Player row hover */
-
 .player-hover-row { position: relative; }
-
 .player-hover-row:hover .player-actions { opacity: 1 !important; }
-
 .player-actions { opacity: 0; transition: opacity 0.2s; }
-
-
-
 /* Action buttons in sidebar */
-
 .sb-action-del .stButton > button {
-
     background: rgba(220,38,38,0.15) !important;
-
     color: rgba(255,100,100,0.8) !important;
-
     border: 1px solid rgba(220,38,38,0.2) !important;
-
     border-radius: 4px !important;
-
     font-size: 9px !important; font-weight: 700 !important;
-
     padding: 3px 6px !important;
-
     margin: 0 !important; width: auto !important;
-
     box-shadow: none !important;
-
 }
-
 .sb-action-del .stButton > button:hover {
-
     background: rgba(220,38,38,0.3) !important;
-
     color: #ff8080 !important;
-
 }
-
 .sb-action-edit .stButton > button {
-
     background: rgba(245,200,66,0.1) !important;
-
     color: rgba(245,200,66,0.7) !important;
-
     border: 1px solid rgba(245,200,66,0.2) !important;
-
     border-radius: 4px !important;
-
     font-size: 9px !important; font-weight: 700 !important;
-
     padding: 3px 6px !important;
-
     margin: 0 !important; width: auto !important;
-
     box-shadow: none !important;
-
 }
-
 .sb-action-edit .stButton > button:hover {
-
     background: rgba(245,200,66,0.2) !important;
-
     color: #f5c842 !important;
-
 }
-
-
-
 /* Sidebar inputs */
-
 [data-testid="stSidebar"] label { display: none !important; }
-
 [data-testid="stSidebar"] .stTextInput { padding: 6px 16px; }
-
 [data-testid="stSidebar"] .stTextInput > div > div {
-
     background: rgba(255,255,255,0.06) !important;
-
     border: 1px solid rgba(255,255,255,0.1) !important;
-
     border-radius: 8px !important;
-
 }
-
 [data-testid="stSidebar"] .stTextInput input {
-
     color: #fff !important; font-size: 12px !important;
-
     padding: 8px 12px !important;
-
 }
-
 [data-testid="stSidebar"] .stTextInput input::placeholder {
-
     color: rgba(255,255,255,0.25) !important;
-
 }
-
-
-
 /* Sidebar buttons */
-
 [data-testid="stSidebar"] .stButton { margin: 0 !important; padding: 0 !important; }
-
 [data-testid="stSidebar"] .stButton > button {
-
     background: transparent !important;
-
     color: rgba(255,255,255,0.5) !important;
-
     border: none !important; outline: none !important;
-
     box-shadow: none !important;
-
     font-size: 13px !important; font-weight: 400 !important;
-
     padding: 8px 20px !important; border-radius: 0 !important;
-
     width: 100% !important; text-align: left !important;
-
     border-left: 2px solid transparent !important;
-
     transition: all 0.15s !important;
-
     white-space: nowrap !important; overflow: hidden !important;
-
     text-overflow: ellipsis !important;
-
 }
-
 [data-testid="stSidebar"] .stButton > button:hover {
-
     background: rgba(255,255,255,0.05) !important;
-
     color: #ffffff !important;
-
     border-left-color: rgba(245,200,66,0.4) !important;
-
 }
-
 [data-testid="stSidebar"] .stButton > button:focus,
-
 [data-testid="stSidebar"] .stButton > button:active {
-
     box-shadow: none !important; outline: none !important;
-
     background: rgba(255,255,255,0.05) !important;
-
 }
-
-
-
 /* Club row */
-
 .club-row .stButton > button {
-
     font-size: 11px !important; font-weight: 700 !important;
-
     color: rgba(255,255,255,0.75) !important;
-
     text-transform: uppercase !important; letter-spacing: 0.5px !important;
-
     padding: 10px 20px !important;
-
 }
-
-
-
 /* Player rows */
-
 .player-row .stButton > button {
-
     color: rgba(255,255,255,0.4) !important;
-
     padding: 6px 20px 6px 34px !important;
-
     font-size: 13px !important; font-style: italic !important;
-
 }
-
 .player-active .stButton > button {
-
     color: #ffffff !important; font-style: normal !important;
-
     font-weight: 600 !important;
-
     border-left: 2px solid #f5c842 !important;
-
     background: rgba(245,200,66,0.06) !important;
-
 }
-
-
-
 /* Add player row */
-
 .add-player-row .stButton > button {
-
     color: rgba(245,200,66,0.4) !important;
-
     font-size: 11px !important;
-
     padding: 5px 20px 8px 34px !important;
-
     border-top: 1px solid rgba(255,255,255,0.04) !important;
-
 }
-
 .add-player-row .stButton > button:hover {
-
     color: #f5c842 !important;
-
     background: rgba(245,200,66,0.05) !important;
-
 }
-
-
-
 /* New academy button */
-
 .new-acad-row .stButton > button {
-
     color: rgba(255,255,255,0.35) !important;
-
     font-size: 11px !important; padding: 8px 20px !important;
-
     border: 1px dashed rgba(255,255,255,0.12) !important;
-
     border-radius: 8px !important;
-
     margin: 4px 16px !important;
-
     width: calc(100% - 32px) !important;
-
     text-align: center !important;
-
 }
-
 .new-acad-row .stButton > button:hover {
-
     color: rgba(255,255,255,0.8) !important;
-
     border-color: rgba(255,255,255,0.3) !important;
-
     background: rgba(255,255,255,0.04) !important;
-
 }
-
-
-
 /* Mode buttons */
-
 .mode-btn-wrap { padding: 8px 16px 4px; display: flex; gap: 6px; }
-
 [data-testid="stSidebar"] .stButton > button:focus { outline: none !important; box-shadow: none !important; }
-
-
-
 /* Sign out */
-
 .signout-wrap { padding: 8px 16px 16px; }
-
 .signout-wrap .stButton > button {
-
     background: rgba(255,255,255,0.04) !important;
-
     color: rgba(255,255,255,0.3) !important;
-
     border: 1px solid rgba(255,255,255,0.08) !important;
-
     border-radius: 8px !important;
-
     font-size: 11px !important; letter-spacing: 1px !important;
-
     text-transform: uppercase !important;
-
     padding: 8px 16px !important;
-
     margin: 0 !important; width: 100% !important;
-
     text-align: center !important;
-
 }
-
 .signout-wrap .stButton > button:hover {
-
     background: rgba(239,68,68,0.1) !important;
-
     color: #fca5a5 !important;
-
     border-color: rgba(239,68,68,0.2) !important;
-
 }
-
-
-
 .sb-meta {
-
     padding: 6px 20px 12px;
-
     font-size: 10px; color: rgba(255,255,255,0.18);
-
     line-height: 1.8;
-
 }
-
-
-
 /* ── MAIN CONTENT ── */
-
-
-
 /* Page header */
-
 .page-header {
-
     padding: 32px 0 24px;
-
     border-bottom: 1px solid #e5e7ef;
-
     margin-bottom: 28px;
-
     display: flex; align-items: flex-end;
-
     justify-content: space-between;
-
 }
-
 .page-title {
-
     font-family: 'Playfair Display', serif !important;
-
     font-size: 42px; font-weight: 700;
-
     color: #04080f; line-height: 1; margin: 0;
-
     letter-spacing: -1px;
-
 }
-
 .page-meta {
-
     font-size: 10px; font-weight: 600;
-
     color: #6b7280; letter-spacing: 3px;
-
     text-transform: uppercase; margin-top: 8px;
-
 }
-
 .page-badge {
-
     display: inline-flex; align-items: center; gap: 6px;
-
     background: #f0fdf4; border: 1px solid #bbf7d0;
-
     border-radius: 20px; padding: 4px 12px;
-
     font-size: 11px; font-weight: 600; color: #16a34a;
-
 }
-
-
-
 /* Metric cards */
-
 .metric-grid { display: grid; grid-template-columns: repeat(6,1fr); gap: 12px; margin-bottom: 8px; }
-
 .metric-card {
-
     background: #ffffff;
-
     border: 1px solid #e5e7ef;
-
     border-radius: 12px; padding: 16px;
-
     box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.02);
-
     transition: box-shadow 0.2s;
-
 }
-
 .metric-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
-
 .metric-label {
-
     font-size: 9px; font-weight: 700;
-
     color: #9ca3af; letter-spacing: 2px;
-
     text-transform: uppercase; margin-bottom: 8px;
-
 }
-
 .metric-value {
-
     font-size: 22px; font-weight: 700; color: #04080f; line-height: 1;
-
 }
-
 .metric-card.highlight { border-top: 3px solid #f5c842; }
-
 .metric-card.positive { border-top: 3px solid #16a34a; }
-
 .metric-card.neutral { border-top: 3px solid #3b82f6; }
-
-
-
 /* Section titles */
-
 .section-title {
-
     font-family: 'Playfair Display', serif !important;
-
     font-size: 18px; font-weight: 600; color: #04080f;
-
     margin: 32px 0 14px; padding-bottom: 12px;
-
     border-bottom: 1px solid #e5e7ef;
-
     display: flex; align-items: center; justify-content: space-between;
-
 }
-
-
-
 /* Report */
-
 .report-wrapper {
-
     background: #ffffff; border: 1px solid #e5e7ef;
-
     border-radius: 16px; padding: 44px 52px;
-
     box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-
 }
-
 .report-header {
-
     border-bottom: 2px solid #04080f; padding-bottom: 20px; margin-bottom: 28px;
-
 }
-
 .report-title {
-
     font-family: 'Playfair Display', serif !important;
-
     font-size: 11px; font-weight: 600; color: #f5c842;
-
     letter-spacing: 4px; text-transform: uppercase; margin-bottom: 8px;
-
 }
-
 .report-player-name {
-
     font-family: 'Playfair Display', serif !important;
-
     font-size: 28px; font-weight: 700; color: #04080f;
-
 }
-
 .report-section-label {
-
     font-size: 9px; font-weight: 700; color: #3b82f6;
-
     letter-spacing: 3px; text-transform: uppercase;
-
     margin: 28px 0 10px; padding-bottom: 8px;
-
     border-bottom: 1px solid #f3f4f6;
-
 }
-
 .report-para {
-
     font-size: 14px; color: #374151; line-height: 1.85;
-
     margin-bottom: 4px;
-
 }
-
 .exec-summary {
-
     background: #fffbeb; border-left: 4px solid #f5c842;
-
     border-radius: 0 12px 12px 0; padding: 20px 24px;
-
     margin-bottom: 28px;
-
 }
-
 .exec-summary .report-para { color: #1c1917; font-weight: 500; }
-
-
-
 /* Coach notes */
-
 .coach-notes-wrap {
-
     background: #fffbeb; border: 1px solid #fde68a;
-
     border-radius: 12px; padding: 20px 24px; margin-top: 20px;
-
 }
-
 .coach-notes-label {
-
     font-size: 9px; font-weight: 700; color: #92400e;
-
     letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px;
-
 }
-
-
-
 /* Action buttons */
-
 .btn-row { display: flex; gap: 8px; margin-bottom: 20px; }
-
 .export-btn .stButton > button {
-
     background: #04080f !important; color: #ffffff !important;
-
     border: none !important; border-radius: 8px !important;
-
     font-size: 10px !important; font-weight: 700 !important;
-
     letter-spacing: 1px !important; text-transform: uppercase !important;
-
     padding: 8px 16px !important; box-shadow: none !important;
-
     width: auto !important;
-
 }
-
 .export-btn .stButton > button:hover { background: #1a3a8a !important; }
-
 .edit-btn .stButton > button {
-
     background: #7c3aed !important; color: #fff !important;
-
     border: none !important; border-radius: 8px !important;
-
     font-size: 10px !important; font-weight: 700 !important;
-
     letter-spacing: 1px !important; text-transform: uppercase !important;
-
     padding: 8px 16px !important; box-shadow: none !important; width: auto !important;
-
 }
-
 .save-btn .stButton > button {
-
     background: #16a34a !important; color: #fff !important;
-
     border: none !important; border-radius: 8px !important;
-
     font-size: 10px !important; font-weight: 700 !important;
-
     letter-spacing: 1px !important; text-transform: uppercase !important;
-
     padding: 8px 16px !important; box-shadow: none !important; width: auto !important;
-
 }
-
 .gen-btn .stButton > button {
-
     background: linear-gradient(135deg, #16a34a, #15803d) !important;
-
     color: #ffffff !important; border: none !important;
-
     border-radius: 10px !important; font-weight: 700 !important;
-
     font-size: 13px !important; letter-spacing: 0.5px !important;
-
     padding: 14px 28px !important; box-shadow: 0 4px 16px rgba(22,163,74,0.3) !important;
-
     width: auto !important;
-
 }
-
 .regen-btn .stButton > button {
-
     background: rgba(245,200,66,0.1) !important; color: #92400e !important;
-
     border: 1px solid rgba(245,200,66,0.4) !important;
-
     border-radius: 8px !important; font-size: 10px !important;
-
     font-weight: 700 !important; letter-spacing: 1px !important;
-
     text-transform: uppercase !important; padding: 8px 16px !important;
-
     box-shadow: none !important; width: auto !important;
-
 }
-
 .stDownloadButton > button {
-
     background: #dc2626 !important; color: #fff !important;
-
     font-size: 10px !important; letter-spacing: 1px !important;
-
     text-transform: uppercase !important; padding: 8px 16px !important;
-
     border-radius: 8px !important; border: none !important;
-
     font-weight: 700 !important; white-space: nowrap !important;
-
     width: auto !important; min-width: 0 !important; max-width: 160px !important;
-
 }
-
-
-
 /* Tables */
-
 .stDataFrame { border: 1px solid #e5e7ef !important; border-radius: 12px !important; }
-
-
-
 /* Text areas */
-
 .stTextArea textarea {
-
     font-family: 'Outfit', sans-serif !important;
-
     font-size: 13px !important; color: #374151 !important;
-
     border: 1px solid #e5e7ef !important; border-radius: 10px !important;
-
     line-height: 1.8 !important;
-
 }
-
-
-
 /* Welcome cards */
-
 .welcome-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-top: 24px; }
-
 .welcome-card {
-
     background: #ffffff; border: 1px solid #e5e7ef;
-
     border-radius: 16px; padding: 28px 24px;
-
     text-align: center;
-
     box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-
     transition: all 0.2s;
-
 }
-
 .welcome-card:hover {
-
     box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-
     transform: translateY(-2px);
-
 }
-
 .welcome-icon { font-size: 32px; margin-bottom: 12px; }
-
 .welcome-title { font-size: 15px; font-weight: 700; color: #04080f; margin-bottom: 6px; }
-
 .welcome-desc { font-size: 12px; color: #9ca3af; line-height: 1.6; }
-
-
-
 /* Upload banner */
-
 .upload-banner {
-
     background: #eff6ff; border: 1px solid #bfdbfe;
-
     border-radius: 10px; padding: 16px 20px; margin-bottom: 20px;
-
 }
-
-
-
 /* No select */
-
 .no-select { padding: 80px 24px; text-align: center; color: #9ca3af; }
-
-
-
 /* Pro badge */
-
 .badge-pro {
-
     display: inline-block; background: rgba(245,200,66,0.1);
-
     border: 1px solid rgba(245,200,66,0.3); color: #92400e;
-
     font-size: 8px; font-weight: 700; letter-spacing: 2px;
-
     padding: 2px 7px; border-radius: 4px; margin-left: 6px;
-
     text-transform: uppercase;
-
 }
-
 .badge-beta {
-
     display: inline-block; background: rgba(59,130,246,0.1);
-
     border: 1px solid rgba(59,130,246,0.2); color: #1d4ed8;
-
     font-size: 8px; font-weight: 700; letter-spacing: 2px;
-
     padding: 2px 7px; border-radius: 4px; margin-left: 6px;
-
     text-transform: uppercase;
-
 }
-
-
-
 /* Scrollbar */
-
 ::-webkit-scrollbar { width: 4px; height: 4px; }
-
 ::-webkit-scrollbar-track { background: transparent; }
-
 ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
-
-
-
 div[role="radiogroup"] { display: none; }
-
-
-
 /* ── FILE UPLOADER - minimal clean ── */
-
 [data-testid="stFileUploader"] {
-
     width: 100% !important;
-
 }
-
 [data-testid="stFileUploader"] section {
-
     background: #f8f9fc !important;
-
     border: 1.5px dashed #d1d5db !important;
-
     border-radius: 10px !important;
-
     padding: 12px 16px !important;
-
     min-height: 0 !important;
-
 }
-
 [data-testid="stFileUploader"] section:hover {
-
     border-color: #1a3a8a !important;
-
     background: #f0f4ff !important;
-
 }
-
 /* Hide the verbose drag-and-drop text */
-
 [data-testid="stFileUploaderDropzoneInstructions"] {
-
     display: none !important;
-
 }
-
 /* The browse button */
-
 [data-testid="stFileUploaderDropzone"] button,
-
 [data-testid="baseButton-secondary"] {
-
     background: #04080f !important;
-
     color: #ffffff !important;
-
     border: none !important;
-
     border-radius: 100px !important;
-
     font-family: 'Outfit', sans-serif !important;
-
     font-size: 11px !important;
-
     font-weight: 600 !important;
-
     padding: 7px 20px !important;
-
     cursor: pointer !important;
-
     white-space: nowrap !important;
-
     width: auto !important;
-
     display: inline-block !important;
-
 }
-
 [data-testid="stFileUploaderDropzone"] button:hover {
-
     background: #1a3a8a !important;
-
 }
-
 /* Uploaded file name display */
-
 [data-testid="stFileUploader"] [data-testid="stMarkdownContainer"] p {
-
     font-size: 11px !important;
-
     color: #6b7280 !important;
-
 }
-
 </style>
-
 """, unsafe_allow_html=True)
 
 try:
@@ -2509,15 +1891,10 @@ for k,v in {
 with st.sidebar:
 
     st.markdown("""
-
     <div class="sb-logo">
-
         <div class="sb-logo-name">Scout IQ·<span class="fc">FC</span></div>
-
         <div class="sb-logo-tag">Where Talent Is Unearthed</div>
-
     </div>
-
     """, unsafe_allow_html=True)
 
     if st.session_state.get("account_type") == "beta":
@@ -2735,39 +2112,22 @@ badge_label = "Admin" if account_type == "admin" else "Beta"
 if st.session_state.get("show_account"):
 
     st.markdown("""
-
     <style>
-
     .acct-page { max-width: 680px; margin: 0 auto; padding: 20px 0; }
-
     .acct-header { margin-bottom: 28px; }
-
     .acct-title { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; color: #04080f; margin-bottom: 4px; }
-
     .acct-sub { font-size: 12px; color: #9ca3af; letter-spacing: 1px; }
-
     .acct-card { background: #ffffff; border: 1px solid #e5e7ef; border-radius: 14px; padding: 24px 28px; margin-bottom: 16px; }
-
     .acct-card-title { font-size: 13px; font-weight: 700; color: #04080f; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-
     .acct-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
-
     .acct-row:last-child { border-bottom: none; }
-
     .acct-label { font-size: 12px; color: #6b7280; }
-
     .acct-value { font-size: 13px; font-weight: 600; color: #04080f; }
-
     .plan-badge { display: inline-block; background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 3px 10px; border-radius: 100px; }
-
     .plan-badge-beta { background: #fefce8; border-color: #fde68a; color: #92400e; }
-
     .danger-zone { border-color: #fecaca; }
-
     .danger-zone .acct-card-title { color: #dc2626; }
-
     </style>
-
     """, unsafe_allow_html=True)
 
     # Back button
@@ -2791,45 +2151,26 @@ if st.session_state.get("show_account"):
         username = "admin" if is_admin else "admin1"
 
         st.markdown(f"""
-
         <div class="acct-card">
-
             <div class="acct-card-title">👤 Account Information</div>
-
             <div class="acct-row"><span class="acct-label">Username</span><span class="acct-value">{username}</span></div>
-
             <div class="acct-row"><span class="acct-label">Account Type</span><span class="acct-value">{"Administrator" if is_admin else "Beta User"}</span></div>
-
             <div class="acct-row"><span class="acct-label">Plan</span><span><span class="plan-badge {"" if is_admin else "plan-badge-beta"}">{"Pro — Admin" if is_admin else "Beta Access"}</span></span></div>
-
             <div class="acct-row"><span class="acct-label">Status</span><span class="acct-value" style="color:#16a34a;">● Active</span></div>
-
             <div class="acct-row"><span class="acct-label">Platform</span><span class="acct-value">Scout IQ·FC v1.0</span></div>
-
             <div class="acct-row"><span class="acct-label">Data Access</span><span class="acct-value">{"All Academies" if is_admin else "Riverside FC Academy only"}</span></div>
-
         </div>
-
         """, unsafe_allow_html=True)
 
         st.markdown(f"""
-
         <div class="acct-card">
-
             <div class="acct-card-title">📊 Usage Summary</div>
-
             <div class="acct-row"><span class="acct-label">Players in platform</span><span class="acct-value">{len(players)}</span></div>
-
             <div class="acct-row"><span class="acct-label">Sessions tracked</span><span class="acct-value">{cursor.execute("SELECT COUNT(*) FROM sessions").fetchone()[0]}</span></div>
-
             <div class="acct-row"><span class="acct-label">Reports generated</span><span class="acct-value">{cursor.execute("SELECT COUNT(*) FROM reports").fetchone()[0]}</span></div>
-
             <div class="acct-row"><span class="acct-label">Academies</span><span class="acct-value">{len(clubs)}</span></div>
-
             <div class="acct-row"><span class="acct-label">Pro Data players</span><span class="acct-value">{cursor.execute("SELECT COUNT(*) FROM epl_players").fetchone()[0]}</span></div>
-
         </div>
-
         """, unsafe_allow_html=True)
 
     with acct_tab2:
@@ -2887,53 +2228,31 @@ if st.session_state.get("show_account"):
         plan_color = "#1d4ed8" if is_admin_acct else "#92400e"
 
         st.markdown(f"""
-
         <div class="acct-card" style="border-top:4px solid {plan_color};">
-
             <div class="acct-card-title">💳 Current Plan</div>
-
             <div class="acct-row"><span class="acct-label">Plan Name</span><span class="acct-value">{plan_name}</span></div>
-
             <div class="acct-row"><span class="acct-label">Price</span><span class="acct-value">{plan_price}</span></div>
-
             <div class="acct-row"><span class="acct-label">Billing Cycle</span><span class="acct-value">Monthly</span></div>
-
             <div class="acct-row"><span class="acct-label">Next Renewal</span><span class="acct-value">May 7, 2026</span></div>
-
             <div class="acct-row"><span class="acct-label">Status</span><span class="acct-value" style="color:#16a34a;">● Active</span></div>
-
         </div>
-
         """, unsafe_allow_html=True)
 
         st.markdown("""
-
         <div class="acct-card">
-
             <div class="acct-card-title">📦 Plan Features</div>
-
             <div class="acct-row"><span class="acct-label">Youth Players</span><span class="acct-value">Unlimited</span></div>
-
             <div class="acct-row"><span class="acct-label">AI Scouting Reports</span><span class="acct-value">Unlimited</span></div>
-
             <div class="acct-row"><span class="acct-label">Academies</span><span class="acct-value">Unlimited</span></div>
-
             <div class="acct-row"><span class="acct-label">Pro Data Import</span><span class="acct-value">✓ Included</span></div>
-
             <div class="acct-row"><span class="acct-label">PDF & Word Export</span><span class="acct-value">✓ Included</span></div>
-
             <div class="acct-row"><span class="acct-label">AI Smart Import</span><span class="acct-value">✓ Included</span></div>
-
         </div>
-
         """, unsafe_allow_html=True)
 
         st.markdown("""
-
         <div class="acct-card">
-
             <div class="acct-card-title">💳 Payment Method</div>
-
         """, unsafe_allow_html=True)
 
         st.markdown('<p style="font-size:12px;color:#9ca3af;margin-bottom:16px;">Payment processing powered by Stripe — coming soon</p>', unsafe_allow_html=True)
@@ -2963,57 +2282,35 @@ if st.session_state.get("show_account"):
         with plan_col1:
 
             st.markdown("""
-
             <div style="background:#f9fafb;border:1.5px solid #e5e7ef;border-radius:12px;padding:20px;text-align:center;">
-
                 <div style="font-size:11px;font-weight:700;color:#6b7280;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Starter</div>
-
                 <div style="font-size:28px;font-weight:800;color:#04080f;margin-bottom:4px;">£19</div>
-
                 <div style="font-size:11px;color:#9ca3af;margin-bottom:16px;">per month</div>
-
                 <div style="font-size:12px;color:#374151;line-height:1.8;">Up to 20 players<br>1 Academy<br>5 AI reports/month<br>PDF Export</div>
-
             </div>
-
             """, unsafe_allow_html=True)
 
         with plan_col2:
 
             st.markdown("""
-
             <div style="background:#eff6ff;border:2px solid #3b82f6;border-radius:12px;padding:20px;text-align:center;position:relative;">
-
                 <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#3b82f6;color:#fff;font-size:9px;font-weight:700;letter-spacing:1px;padding:3px 10px;border-radius:100px;">POPULAR</div>
-
                 <div style="font-size:11px;font-weight:700;color:#1d4ed8;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Pro</div>
-
                 <div style="font-size:28px;font-weight:800;color:#04080f;margin-bottom:4px;">£49</div>
-
                 <div style="font-size:11px;color:#9ca3af;margin-bottom:16px;">per month</div>
-
                 <div style="font-size:12px;color:#374151;line-height:1.8;">Unlimited players<br>Unlimited academies<br>Unlimited AI reports<br>Pro Data Import<br>AI Smart Import</div>
-
             </div>
-
             """, unsafe_allow_html=True)
 
         with plan_col3:
 
             st.markdown("""
-
             <div style="background:#fafaf9;border:1.5px solid #e5e7ef;border-radius:12px;padding:20px;text-align:center;">
-
                 <div style="font-size:11px;font-weight:700;color:#6b7280;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Academy</div>
-
                 <div style="font-size:28px;font-weight:800;color:#04080f;margin-bottom:4px;">£149</div>
-
                 <div style="font-size:11px;color:#9ca3af;margin-bottom:16px;">per month</div>
-
                 <div style="font-size:12px;color:#374151;line-height:1.8;">5 coach accounts<br>White label reports<br>Custom branding<br>Priority support<br>API access</div>
-
             </div>
-
             """, unsafe_allow_html=True)
 
         st.markdown('<p style="font-size:12px;color:#9ca3af;margin-top:16px;text-align:center;">To upgrade or change your plan, contact <a href="mailto:scoutiqfc@gmail.com" style="color:#3b82f6;">scoutiqfc@gmail.com</a></p>', unsafe_allow_html=True)
@@ -3021,11 +2318,8 @@ if st.session_state.get("show_account"):
         # Danger zone
 
         st.markdown("""
-
         <div class="acct-card danger-zone" style="margin-top:24px;border-color:#fecaca;">
-
             <div class="acct-card-title" style="color:#dc2626;">⚠ Danger Zone</div>
-
         """, unsafe_allow_html=True)
 
         if st.button("Cancel Subscription", key="cancel_sub"):
@@ -3617,51 +2911,28 @@ if st.session_state.mode == "youth":
         # Hero
 
         st.markdown(f"""
-
         <div style="background:linear-gradient(135deg,#04080f 0%,#1a3a8a 55%,#0f1f5c 100%);border-radius:16px;padding:36px 40px;margin-bottom:24px;position:relative;overflow:hidden;">
-
             <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px);background-size:44px 44px;"></div>
-
             <div style="position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;">
-
                 <div>
-
                     <div style="font-size:9px;font-weight:700;color:rgba(245,200,66,0.65);letter-spacing:4px;text-transform:uppercase;margin-bottom:10px;">Scout IQ·FC · Academy</div>
-
                     <div style="font-family:'Playfair Display',serif;font-size:38px;font-weight:700;color:#fff;letter-spacing:-0.5px;margin-bottom:8px;">{club}</div>
-
                     <div style="font-size:12px;color:rgba(255,255,255,0.4);">{len(acad_ps)} players · {tot_sess} sessions · {tot_reps} reports generated</div>
-
                 </div>
-
                 <div style="text-align:right;">
-
                     <div style="font-size:9px;font-weight:700;color:rgba(245,200,66,0.6);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Season Goals</div>
-
                     <div style="font-size:52px;font-weight:800;color:#f5c842;line-height:1;">{int(tot_g)}</div>
-
                 </div>
-
             </div>
-
             <div style="display:flex;gap:36px;margin-top:24px;position:relative;z-index:1;flex-wrap:wrap;">
-
                 <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:#fff;">{int(tot_a)}</div><div style="font-size:9px;color:rgba(255,255,255,0.32);letter-spacing:2px;text-transform:uppercase;margin-top:2px;">Assists</div></div>
-
                 <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:#fff;">{avg_coach}/10</div><div style="font-size:9px;color:rgba(255,255,255,0.32);letter-spacing:2px;text-transform:uppercase;margin-top:2px;">Avg Coach</div></div>
-
                 <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:#fff;">{avg_att}/10</div><div style="font-size:9px;color:rgba(255,255,255,0.32);letter-spacing:2px;text-transform:uppercase;margin-top:2px;">Avg Attitude</div></div>
-
                 <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:#fff;">{avg_cons}/10</div><div style="font-size:9px;color:rgba(255,255,255,0.32);letter-spacing:2px;text-transform:uppercase;margin-top:2px;">Consistency</div></div>
-
                 <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:#fff;">{avg_dist}km</div><div style="font-size:9px;color:rgba(255,255,255,0.32);letter-spacing:2px;text-transform:uppercase;margin-top:2px;">Avg Distance</div></div>
-
                 <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:#fff;">{avg_spr}</div><div style="font-size:9px;color:rgba(255,255,255,0.32);letter-spacing:2px;text-transform:uppercase;margin-top:2px;">Avg Sprints</div></div>
-
             </div>
-
         </div>
-
         """, unsafe_allow_html=True)
 
         # Stats row
@@ -3939,27 +3210,16 @@ if st.session_state.mode == "youth":
                     badge = '<span style="background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-size:8px;font-weight:700;padding:2px 6px;border-radius:100px;margin-left:6px;">✓ Report</span>' if has_rep else ''
 
                     st.markdown(f"""
-
                     <div style="background:#fff;border:1px solid #e5e7ef;border-radius:12px;padding:16px 18px;margin-bottom:8px;">
-
                         <div style="font-size:14px;font-weight:700;color:#04080f;margin-bottom:3px;">{p[1]}{badge}</div>
-
                         <div style="font-size:11px;color:#9ca3af;margin-bottom:10px;">{p[2]} · {p[4]} · {p[5] or ''}</div>
-
                         <div style="display:flex;gap:14px;">
-
                             <div><div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;">Sessions</div><div style="font-size:13px;font-weight:700;color:#374151;">{p_sess}</div></div>
-
                             <div><div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;">Goals</div><div style="font-size:13px;font-weight:700;color:#374151;">{p_g}</div></div>
-
                             <div><div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;">Assists</div><div style="font-size:13px;font-weight:700;color:#374151;">{p_a}</div></div>
-
                             <div><div style="font-size:9px;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;">Coach</div><div style="font-size:13px;font-weight:700;color:#374151;">{p_c}/10</div></div>
-
                         </div>
-
                     </div>
-
                     """, unsafe_allow_html=True)
 
                     if st.button(f"View Profile →", key=f"view_lp_{p[0]}"):
@@ -4420,7 +3680,7 @@ if st.session_state.mode == "youth":
 
         if add_key not in st.session_state: st.session_state[add_key] = False
 
-        if st.button("＋ Add", key=f"add_s_{pid}"):
+        if st.button("＋ Add", key=f"add_s2_{pid}"):
 
             st.session_state[add_key] = not st.session_state[add_key]; st.rerun()
 
@@ -5186,23 +4446,14 @@ Complete all sections. No truncation."""
         st.markdown('<div class="section-title">AI Smart Import</div>', unsafe_allow_html=True)
 
         st.markdown("""
-
         <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:20px 24px;margin-bottom:24px;">
-
             <p style="font-size:14px;font-weight:700;color:#1d4ed8;margin-bottom:6px;">✨ Paste Any Professional Data</p>
-
             <p style="font-size:13px;color:#3b82f6;margin:0;line-height:1.7;">
-
             Paste data from any source — FBref, Transfermarkt, WhoScored, Sofascore, a PDF report, 
-
             a copied spreadsheet, or even handwritten notes. Claude will identify the players, 
-
             extract their stats, and structure them for the platform automatically.
-
             </p>
-
         </div>
-
         """, unsafe_allow_html=True)
 
         col_ex1, col_ex2 = st.columns(2)
@@ -5210,41 +4461,25 @@ Complete all sections. No truncation."""
         with col_ex1:
 
             st.markdown("""
-
             <div style="background:#f9fafb;border:1px solid #e5e7ef;border-radius:10px;padding:14px 16px;font-size:12px;color:#6b7280;">
-
             <strong style="color:#374151;">Works with:</strong><br>
-
             • Copied FBref tables<br>
-
             • Sofascore player stats<br>
-
             • PDF match reports (text)<br>
-
             • Spreadsheet pastes
-
             </div>
-
             """, unsafe_allow_html=True)
 
         with col_ex2:
 
             st.markdown("""
-
             <div style="background:#f9fafb;border:1px solid #e5e7ef;border-radius:10px;padding:14px 16px;font-size:12px;color:#6b7280;">
-
             <strong style="color:#374151;">Also works with:</strong><br>
-
             • WhatsApp scouting notes<br>
-
             • Rough text descriptions<br>
-
             • Mixed format data<br>
-
             • Any language
-
             </div>
-
             """, unsafe_allow_html=True)
 
         st.markdown('<div style="margin-top:20px;"></div>', unsafe_allow_html=True)
@@ -5346,47 +4581,26 @@ Or type rough notes: Erling Haaland, 24, striker Man City, 27 goals 5 assists th
                 notes_d = p.get("coach_notes","")
 
                 st.markdown(f"""<div style="background:#fff;border:1px solid #e5e7ef;border-radius:14px;padding:24px 28px;margin-bottom:16px;">
-
 <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-
 <div><div style="font-size:22px;font-weight:700;color:#04080f;">{pname_d}</div>
-
 <div style="font-size:11px;color:#6b7280;margin-top:2px;">{team_d} &nbsp;·&nbsp; {p.get("position","?")} &nbsp;·&nbsp; {p.get("nationality","?")} &nbsp;·&nbsp; Age {p.get("age","?")} &nbsp;·&nbsp; {season_d}</div></div>
-
 <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 16px;font-size:11px;text-align:center;">
-
 <div style="font-weight:700;color:#92400e;letter-spacing:1px;text-transform:uppercase;font-size:9px;margin-bottom:2px;">Peak Season</div>
-
 <div style="font-size:14px;font-weight:700;color:#04080f;">{peak_d}: {peak_g_d}G {peak_a_d}A</div></div></div>
-
 <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;">
-
 <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:9px;color:#16a34a;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Goals</div><div style="font-size:20px;font-weight:700;color:#04080f;">{goals_d}</div><div style="font-size:9px;color:#6b7280;">{g90}/90</div></div>
-
 <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:9px;color:#1d4ed8;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Assists</div><div style="font-size:20px;font-weight:700;color:#04080f;">{assists_d}</div><div style="font-size:9px;color:#6b7280;">{a90}/90</div></div>
-
 <div style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:9px;color:#7c3aed;font-weight:700;letter-spacing:1px;text-transform:uppercase;">xG</div><div style="font-size:20px;font-weight:700;color:#04080f;">{xg_d}</div><div style="font-size:9px;color:#6b7280;">expected</div></div>
-
 <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:9px;color:#c2410c;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Shots</div><div style="font-size:20px;font-weight:700;color:#04080f;">{shots_d}</div><div style="font-size:9px;color:#6b7280;">{sot_d} on target</div></div>
-
 <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:9px;color:#64748b;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Conv%</div><div style="font-size:20px;font-weight:700;color:#04080f;">{conv_d}%</div><div style="font-size:9px;color:#6b7280;">{xg_per_shot} xG/shot</div></div>
-
 </div>
-
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;">
-
 <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase;">Minutes</div><div style="font-size:16px;font-weight:700;color:#04080f;">{mins_d:,}</div><div style="font-size:9px;color:#6b7280;">{apps_d} apps</div></div>
-
 <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase;">Cards</div><div style="font-size:16px;font-weight:700;color:#04080f;">{yc_d}Y {rc_d}R</div><div style="font-size:9px;color:#6b7280;">discipline</div></div>
-
 <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:9px;color:#dc2626;font-weight:700;text-transform:uppercase;">Career G</div><div style="font-size:16px;font-weight:700;color:#04080f;">{cg_d}</div><div style="font-size:9px;color:#6b7280;">{capp_d} apps</div></div>
-
 <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:9px;color:#dc2626;font-weight:700;text-transform:uppercase;">Career A</div><div style="font-size:16px;font-weight:700;color:#04080f;">{ca_d}</div><div style="font-size:9px;color:#6b7280;">total assists</div></div>
-
 </div>
-
 {f'<div style="background:#f9fafb;border:1px solid #e5e7ef;border-radius:8px;padding:10px 14px;font-size:11px;color:#374151;line-height:1.7;max-height:120px;overflow-y:auto;">{notes_d[:600]}</div>' if notes_d else ''}
-
 </div>""", unsafe_allow_html=True)
 
 
