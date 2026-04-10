@@ -4577,25 +4577,23 @@ Or type rough notes: Erling Haaland, 24, striker Man City, 27 goals 5 assists th
 
                 pname_d = p.get("name","?"); team_d = p.get("team","?")
 
-                season_d = p.get("season","?"); goals_d = p.get("goals",0); assists_d = p.get("assists",0)
+                season_d = str(p.get("season","?") or "?"); goals_d = int(float(p.get("goals",0) or 0) if p.get("goals") not in (None,"","nan") else 0); assists_d = int(float(p.get("assists",0) or 0) if p.get("assists") not in (None,"","nan") else 0)
 
-                xg_d = p.get("xg",0); shots_d = p.get("shots",0); sot_d = p.get("shots_on_target",0)
-
-                conv_d = p.get("conversion_rate",0); mins_d = p.get("minutes",0); apps_d = p.get("appearances",0)
-
-                yc_d = p.get("yellow_cards",0); rc_d = p.get("red_cards",0)
-
-                cg_d = p.get("career_goals",0); ca_d = p.get("career_assists",0); capp_d = p.get("career_appearances",0)
-
-                peak_d = p.get("peak_season",""); peak_g_d = p.get("peak_goals",0); peak_a_d = p.get("peak_assists",0)
-
-                xg_per_shot = round(float(xg_d)/int(shots_d),2) if shots_d and int(shots_d)>0 else 0
-
-                g90 = p.get("goals_per_90",0) or (round(float(goals_d)/(float(mins_d)/90),2) if mins_d and float(mins_d)>0 else 0)
-
-                a90 = p.get("assists_per_90",0) or (round(float(assists_d)/(float(mins_d)/90),2) if mins_d and float(mins_d)>0 else 0)
-
-                notes_d = p.get("coach_notes","")
+                def _f(v, d=0.0):
+                    try: return float(v) if v not in (None,"","nan","null") else d
+                    except: return d
+                def _i(v, d=0):
+                    try: return int(float(v)) if v not in (None,"","nan","null") else d
+                    except: return d
+                xg_d = _f(p.get("xg",0)); shots_d = _i(p.get("shots",0)); sot_d = _i(p.get("shots_on_target",0))
+                conv_d = _f(p.get("conversion_rate",0)); mins_d = _i(p.get("minutes",0)); apps_d = _i(p.get("appearances",0))
+                yc_d = _i(p.get("yellow_cards",0)); rc_d = _i(p.get("red_cards",0))
+                cg_d = _i(p.get("career_goals",0)); ca_d = _i(p.get("career_assists",0)); capp_d = _i(p.get("career_appearances",0))
+                peak_d = str(p.get("peak_season","") or ""); peak_g_d = _i(p.get("peak_goals",0)); peak_a_d = _i(p.get("peak_assists",0))
+                xg_per_shot = round(xg_d/max(1,shots_d),3) if shots_d > 0 else 0
+                g90 = _f(p.get("goals_per_90",0)) or (round(_f(goals_d)/(_f(mins_d)/90),2) if mins_d > 0 else 0)
+                a90 = _f(p.get("assists_per_90",0)) or (round(_f(assists_d)/(_f(mins_d)/90),2) if mins_d > 0 else 0)
+                notes_d = str(p.get("coach_notes","") or "")
 
                 st.markdown(f"""<div style="background:#fff;border:1px solid #e5e7ef;border-radius:14px;padding:24px 28px;margin-bottom:16px;">
 <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
