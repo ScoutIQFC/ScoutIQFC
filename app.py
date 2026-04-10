@@ -484,6 +484,12 @@ CREATE TABLE IF NOT EXISTS epl_reports (
 
 conn.commit()
 
+# Team profiles table
+try:
+    cursor.execute("""CREATE TABLE IF NOT EXISTS team_profiles (id INTEGER PRIMARY KEY AUTOINCREMENT, team_name TEXT, league TEXT, season TEXT, manager TEXT, matches_played INTEGER DEFAULT 0, wins INTEGER DEFAULT 0, draws INTEGER DEFAULT 0, losses INTEGER DEFAULT 0, goals_for INTEGER DEFAULT 0, goals_against INTEGER DEFAULT 0, xg_for REAL DEFAULT 0, xg_against REAL DEFAULT 0, possession_pct REAL DEFAULT 0, pass_accuracy_pct REAL DEFAULT 0, shots_per_game REAL DEFAULT 0, clean_sheets INTEGER DEFAULT 0, yellow_cards INTEGER DEFAULT 0, red_cards INTEGER DEFAULT 0, top_scorer TEXT, top_scorer_goals INTEGER DEFAULT 0, top_assister TEXT, top_assister_assists INTEGER DEFAULT 0, form TEXT, notes TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)""")
+    conn.commit()
+except: pass
+
 try:
 
     from demo_data import seed_demo_data
@@ -1037,156 +1043,157 @@ def ai_report(prompt):
 
 
 def ai_clean_data(raw_text, data_type="youth"):
-
-    """Parse any unstructured football data into platform JSON."""
-
+    """Parse unstructured football data from any major source into platform JSON."""
     api_key = get_api_key()
-
     if not api_key: return "[]"
-
     client = anthropic.Anthropic(api_key=api_key)
 
-
-
     if data_type == "youth":
-
         prompt = (
-
             "You are a football data parser for a youth player tracking platform.\n"
-
-            "The data can be in ANY format: match notes, WhatsApp messages, copied tables, rough notes, CSV.\n"
-
+            "Data can be in ANY format: match notes, WhatsApp messages, tables, rough notes, CSV.\n"
             "Extract every player you can find. Use sensible defaults for missing fields.\n\n"
-
             "Return ONLY a valid JSON array. Each object must have:\n"
-
             "name, date_of_birth (YYYY-MM-DD or null), "
-
             "position (Striker/Right Winger/Left Winger/Attacking Midfielder/Central Midfielder/"
-
             "Defensive Midfielder/Right Back/Left Back/Centre Back/Goalkeeper), "
-
             "club, dominant_foot (Right/Left), age_group (U13/U14/U15/U16/U17/U18), nationality,\n"
-
             "session_date (YYYY-MM-DD or null), session_type (match/training), minutes_played (integer),\n"
-
             "distance_covered_km (float), sprint_count (integer), top_speed_kmh (float),\n"
-
             "passes_completed (integer), passes_attempted (integer), dribbles_completed (integer),\n"
-
             "defensive_actions (integer), goals (integer), assists (integer), chances_created (integer),\n"
-
             "tackles_won (integer), coachability_rating (1-10), attitude_score (1-10),\n"
-
             "consistency_rating (1-10), coach_notes (string)\n\n"
-
             "Defaults: 7 for ratings, 90 for minutes, 8.0 for distance, Right foot, U16.\n"
-
             "No markdown. No explanation. Return ONLY the JSON array.\n\nRaw data:\n"
-
         ) + raw_text
 
-
+    elif data_type == "team":
+        prompt = (
+            "You are a football data analyst. Extract a TEAM profile from the raw data below.\n"
+            "Data may come from FBref, Opta Analyst, FootyStats, Premier League, WhoScored, Sofascore, Transfermarkt.\n\n"
+            "Extract ALL available team stats. Return ONE JSON object in an array:\n"
+            "{\n"
+            '  "team_name": "Arsenal",\n'
+            '  "league": "Premier League",\n'
+            '  "season": "2025-26",\n'
+            '  "manager": "Mikel Arteta",\n'
+            '  "matches_played": 27,\n'
+            '  "wins": 18, "draws": 5, "losses": 4,\n'
+            '  "goals_for": 54, "goals_against": 22, "goal_difference": 32,\n'
+            '  "points": 59,\n'
+            '  "xg_for": 52.1, "xg_against": 24.3,\n'
+            '  "possession_pct": 56.2,\n'
+            '  "shots_per_game": 14.2, "shots_on_target_per_game": 5.8,\n'
+            '  "pass_accuracy_pct": 87.3,\n'
+            '  "clean_sheets": 9,\n'
+            '  "yellow_cards": 38, "red_cards": 2,\n'
+            '  "top_scorer": "Kai Havertz", "top_scorer_goals": 14,\n'
+            '  "top_assister": "Bukayo Saka", "top_assister_assists": 9,\n'
+            '  "form": "WWDWL",\n'
+            '  "home_record": "10W 2D 2L", "away_record": "8W 3D 2L",\n'
+            '  "notes": "all additional stats, historical seasons, squad depth, any other data found"\n'
+            "}\n\n"
+            "Use 0 for missing numerics. Extract whatever is available.\n"
+            "No markdown. No explanation. JSON array only.\n\nRaw data:\n"
+        ) + raw_text
 
     else:
-
+        # PLAYER - knows all major football data sources
         prompt = (
+            "You are a senior football data analyst. Parse the raw player data below with complete precision.\n\n"
 
-            "You are a senior football data analyst. Parse this raw player data with precision.\n\n"
+            "== SOURCE RECOGNITION ==\n"
+            "Identify which source this data comes from and apply the correct parsing logic:\n\n"
 
+            "SOURCE A: FBref (fbref.com)\n"
+            "Standard stats table columns (exact order when copy-pasted):\n"
+            "Season | Age | Squad | Country | Comp | LgRank | MP | Starts | Min | 90s | Gls | Ast | G+A | G-PK | PK | PKatt | CrdY | CrdR | [per-90: Gls | Ast | G+A | G-PK | G+A-PK]\n"
+            "Shooting table: Sh | SoT | SoT% | Sh/90 | SoT/90 | G/Sh | G/SoT | Dist | FK | PK | PKatt | xG | npxG | npxG/Sh | G-xG\n"
+            "Passing table: Cmp | Att | Cmp% | TotDist | PrgDist | ... | Ast | xAG | xA | KP | 1/3 | PPA | CrsPA | PrgP\n"
+            "KEY FBref columns: MP=appearances, Min=minutes, Gls=goals, Ast=assists, CrdY=yellows, CrdR=reds, Sh=shots, SoT=shots on target, xG=expected goals\n\n"
 
+            "SOURCE B: Opta Analyst (theanalyst.com)\n"
+            "Uses Opta's proprietary metrics. Key fields when pasted:\n"
+            "Goals, Assists, xG (expected goals), xA (expected assists), Shots, Shots on Target,\n"
+            "Key Passes, Chances Created, Dribbles (Attempted/Successful), Touches, Passes (Attempted/Completed),\n"
+            "Tackles (Won/Attempted), Interceptions, Clearances, Aerial Duels Won%,\n"
+            "Progressive Carries, Progressive Passes, Penalty Area Touches\n"
+            "Opta radars show PERCENTILE rankings (0-100) vs league peers — do NOT confuse percentile with raw stat.\n"
+            "If you see numbers like '87th' or '%ile' they are percentiles, not goals/assists.\n\n"
 
-            "== STRUCTURE OF THE DATA ==\n"
+            "SOURCE C: FootyStats (footystats.org)\n"
+            "Player stats when pasted: Goals, Assists, xG, Minutes, Appearances, Yellow Cards, Red Cards,\n"
+            "Shots Per 90, Shots on Target Per 90, Key Passes Per 90, Dribbles Per 90,\n"
+            "Tackles Per 90, Interceptions Per 90, Aerial Wins Per 90,\n"
+            "Pass Accuracy%, Dribble Success%, Clean Sheet% (for GKs/defenders)\n"
+            "FootyStats uses per-90 normalised stats extensively. Raw totals are also shown.\n\n"
 
-            "SECTION 1 - Headline summary (top): appearances, minutes, goals, assists stacked vertically\n"
+            "SOURCE D: Premier League Official (premierleague.com)\n"
+            "Fields: Appearances, Goals, Assists, Passes, Passes per Match, Big Chances Created,\n"
+            "Shots, Shots on Target, Goal Involvement, Minutes Played, Yellow Cards, Red Cards\n\n"
 
-            "SECTION 2 - Shot table (tab-separated row): name|apps|mins|goals|xG|goals-vs-xG|shots|SOT|conv%|xG/shot\n"
+            "SOURCE E: WhoScored / Sofascore / Flashscore\n"
+            "WhoScored: rating (1-10), Goals, Assists, Key Passes, Dribbles, Tackles, Interceptions,\n"
+            "Shots per game, Passes per game, Dispossessed per game, Fouls per game, WhoScored rating\n"
+            "Sofascore: Goals, Assists, xG, xA, rating, Touches, Key Passes, Dribbles Succeeded,\n"
+            "Accurate Passes %, Tackles, Interceptions, Clearances, Duels Won\n\n"
 
-            "  Example: 'Bukayo Saka 27 2001 6 6.99 -0.99 63 26 9.52% 0.11'\n"
+            "SOURCE F: Transfermarkt (transfermarkt.com)\n"
+            "Market value, contract details, transfer history, biographical info, appearances, goals, assists per season\n\n"
 
-            "  Column order: apps=27, mins=2001, goals=6, xG=6.99 (NOT goals), shots=63, SOT=26, conv=9.52\n"
+            "== EXTRACTION RULES (apply regardless of source) ==\n"
+            "name = player name ONLY (never the club/team)\n"
+            "team = current club\n"
+            "goals = actual goals scored this season (integer 0-50, never xG, never career total)\n"
+            "assists = actual assists this season (integer 0-30, never xA, never career total)\n"
+            "xg = expected goals (decimal float like 6.99, NEVER equals goals exactly)\n"
+            "xa = expected assists (decimal float, separate from assists)\n"
+            "shots = total shots taken this season (integer, NOT assists, NOT xG)\n"
+            "shots_on_target = shots on target this season\n"
+            "minutes = total minutes played this season (integer 0-4000, remove commas)\n"
+            "appearances = matches played this season\n"
+            "yellow_cards = yellow cards this season\n"
+            "red_cards = red cards this season\n"
+            "career_goals = ALL-TIME goals across career (must be >= season goals)\n"
+            "career_assists = ALL-TIME assists across career (must be >= season assists)\n"
+            "career_appearances = ALL-TIME apps (must be >= season apps)\n"
+            "career_minutes = ALL-TIME minutes (must be >= season minutes)\n"
+            "peak_season = the season year with most goals\n\n"
 
-            "SECTION 3 - Career table: Season|Age|Squad|Country|Comp|LgRank|MP|Starts|Min|90s|Gls|Ast|G+A|G-PK|PK|PKatt|CrdY|CrdR\n"
-
-            "  Each row = one season. Last data row = current season. '8 Seasons' row = career totals.\n"
-
-            "SECTION 4 - Bio: name, DOB, age, club, position, nationality\n\n"
-
-
-
-            "== WHAT TO EXTRACT ==\n"
-
-            "CURRENT SEASON (most recent year row, e.g. 2025-2026):\n"
-
-            "  season, appearances(MP), minutes(Min strip commas), goals(Gls), assists(Ast)\n"
-
-            "  yellow_cards(CrdY), red_cards(CrdR)\n"
-
-            "  goals_per_90 = goals/(minutes/90), assists_per_90 = assists/(minutes/90)\n\n"
-
-            "SHOT TABLE: xg(xG float), shots, shots_on_target(SOT), conversion_rate(conv%)\n\n"
-
-            "CAREER TOTALS row ('8 Seasons'/'Total'): career_goals, career_assists, career_appearances, career_minutes\n\n"
-
-            "PEAK SEASON: scan all rows, find highest Gls -> peak_season, peak_goals, peak_assists\n\n"
-
-            "SEASON BREAKDOWN - for coach_notes, format EVERY season row as:\n"
-
-            "  'YEAR (Age AGE): MP apps, Min mins, Gls/Ast goals/assists, CrdY/CrdR cards | Comp'\n"
-
-            "  Example: '2022-23 (Age 20): 38 apps, 3181 mins, 14/11 goals/assists, 6Y/0R | Premier League'\n"
-
-            "  Include ALL seasons found. Add any other stats after the seasons.\n\n"
-
-
+            "ADDITIONAL STATS to extract if present:\n"
+            "key_passes, progressive_passes, dribbles_completed, dribble_success_pct,\n"
+            "tackles, interceptions, aerial_duels_won_pct, pass_accuracy_pct,\n"
+            "chances_created, penalty_area_touches, progressive_carries,\n"
+            "whoscored_rating, sofascore_rating, fouls_committed,\n"
+            "formation_usage (e.g. '64% RW in 4-3-3'), market_value\n"
+            "Put ALL of these in coach_notes as: 'STAT: value, STAT: value, ...'\n"
+            "Also put the FULL season-by-season career history table in coach_notes.\n\n"
 
             "== SANITY CHECKS ==\n"
-
-            "goals: 0-50 single season. If >50 you grabbed career total - re-read.\n"
-
-            "assists: 0-30 single season. If >30 you grabbed career total - re-read.\n"
-
-            "xg: must be decimal float, never equals goals integer exactly.\n"
-
-            "minutes: 0-4000 single season. 17119 is career total - fix it.\n"
-
+            "goals: 0-50 per season. If > 50, you read career total — use season row only.\n"
+            "assists: 0-30 per season. If > 30, you read career total.\n"
+            "shots: 0-200 per season. shots(63) != assists(3). Completely different fields.\n"
+            "xg: decimal float, never exact integer, never = goals.\n"
+            "minutes: 0-4000 per season. 17,119 = career total, not season.\n"
             "career_goals >= season goals. career_minutes >= season minutes.\n\n"
 
-
-
-            "Return ONLY a JSON array with ONE object:\n"
-
-            "{name, team, position(Forward/Midfielder/Defender/Goalkeeper), nationality, age, dob,\n"
-
+            "== OUTPUT ==\n"
+            "Return ONLY a valid JSON array with ONE object:\n"
+            "{name, team, position (Forward/Midfielder/Defender/Goalkeeper), nationality, age, dob,\n"
             "season, appearances, minutes, goals, assists, goals_per_90, assists_per_90,\n"
-
             "yellow_cards, red_cards, clean_sheets, xg, xa, shots, shots_on_target, conversion_rate,\n"
-
             "career_goals, career_assists, career_appearances, career_minutes,\n"
-
-            "peak_season, peak_goals, peak_assists,\n"
-
-            "coach_notes (ALL season rows formatted + any extra stats)}\n\n"
-
+            "peak_season, peak_goals, peak_assists, coach_notes}\n\n"
             "No markdown. No explanation. JSON array only.\n\nRAW DATA:\n"
-
         ) + raw_text
 
-
-
     r = client.messages.create(
-
         model="claude-opus-4-5",
-
         max_tokens=4000,
-
         messages=[{"role": "user", "content": prompt}]
-
     )
-
     return r.content[0].text
-
-
 
 def generate_ai_heatmap(player_name, notes, stats_context=""):
 
@@ -3948,7 +3955,7 @@ else:
 
     st.markdown('<div class="page-header"><div><div class="page-title">Pro Data</div><div class="page-meta">Professional Match Analysis &nbsp;·&nbsp; Real Performance Data</div></div></div>', unsafe_allow_html=True)
 
-    tab1,tab2,tab3,tab4,tab5=st.tabs(["Upload Data","Player Report","Team Analysis","✨ AI Import","🗺 Visual Maps"])
+    tab1,tab2,tab3,tab4,tab5,tab6=st.tabs(["Upload Data","Player Report","Team Analysis","✨ AI Import","🗺 Visual Maps","🏟 Team Import"])
 
     with tab1:
 
@@ -4328,73 +4335,83 @@ else:
 
                     with col: st.markdown(f'<div class="metric-card {style}"><div class="metric-label">{lbl}</div><div class="metric-value">{val}</div></div>', unsafe_allow_html=True)
 
-                st.markdown('<div class="section-title">Season Statistics</div>', unsafe_allow_html=True)
-
-                # Show actual season stats from the stored record
+                st.markdown('<div class="section-title">Current Season</div>', unsafe_allow_html=True)
                 s1 = eps[0] if eps else None
                 if s1:
-                    # Core KPIs
+                    g90 = round(sg(s1,7)/(sg(s1,6)/90),2) if sg(s1,6) and int(sg(s1,6))>0 else 0
+                    a90 = round(sg(s1,8)/(sg(s1,6)/90),2) if sg(s1,6) and int(sg(s1,6))>0 else 0
+                    conv = round(sg(s1,7)/max(1,int(sg(s1,9)))*100,1) if sg(s1,9) else 0
+                    xg_v = round(float(sg(s1,11,0)),2)
+                    xa_v = round(float(sg(s1,12,0)),2)
+                    xg_per_shot = round(xg_v/max(1,int(sg(s1,9))),3) if sg(s1,9) else 0
+                    # Row 1: Core output
                     k1,k2,k3,k4,k5,k6 = st.columns(6)
-                    kpi_data = [
-                        (k1,"Minutes",f"{sg(s1,6):,}","neutral"),
-                        (k2,"Goals",sg(s1,7),"positive"),
-                        (k3,"Assists",sg(s1,8),"positive"),
-                        (k4,"xG",round(float(sg(s1,11,0)),2),"highlight"),
-                        (k5,"Shots",sg(s1,9),"neutral"),
-                        (k6,"SOT",sg(s1,10),"neutral"),
-                    ]
-                    for col,lbl,val,style in kpi_data:
-                        with col: st.markdown(f'<div class="metric-card {style}"><div class="metric-label">{lbl}</div><div class="metric-value">{val}</div></div>', unsafe_allow_html=True)
-
-                    st.markdown("", unsafe_allow_html=True)
-                    k7,k8,k9,k10 = st.columns(4)
-                    apps_val = sg(s1,2) if sg(s1,2) else tm // 90 if tm else 0
-                    g90 = round(sg(s1,7) / (sg(s1,6)/90), 2) if sg(s1,6) and sg(s1,6) > 0 else 0
-                    a90 = round(sg(s1,8) / (sg(s1,6)/90), 2) if sg(s1,6) and sg(s1,6) > 0 else 0
-                    conv = round(sg(s1,7)/sg(s1,9)*100, 1) if sg(s1,9) and sg(s1,9) > 0 else 0
-                    xg_per_shot = round(float(sg(s1,11,0))/sg(s1,9), 3) if sg(s1,9) and sg(s1,9) > 0 else 0
-                    kpi2 = [(k7,"G/90",g90,"neutral"),(k8,"A/90",a90,"neutral"),(k9,"Conv%",f"{conv}%","neutral"),(k10,"xG/Shot",xg_per_shot,"neutral")]
-                    for col,lbl,val,style in kpi2:
-                        with col: st.markdown(f'<div class="metric-card {style}"><div class="metric-label">{lbl}</div><div class="metric-value">{val}</div></div>', unsafe_allow_html=True)
-
-                    # Discipline row
-                    d1,d2,d3,_ = st.columns(4)
-                    with d1: st.markdown(f'<div class="metric-card"><div class="metric-label">Yellow Cards</div><div class="metric-value">{sg(s1,23)}</div></div>', unsafe_allow_html=True)
-                    with d2: st.markdown(f'<div class="metric-card"><div class="metric-label">Red Cards</div><div class="metric-value">{sg(s1,24)}</div></div>', unsafe_allow_html=True)
-                    with d3: st.markdown(f'<div class="metric-card"><div class="metric-label">Passes</div><div class="metric-value">{sg(s1,13):,}</div></div>', unsafe_allow_html=True)
-
-                    # Career context banner if available
-                    try:
-                        cg = ep[6] if len(ep)>6 and ep[6] else 0
-                        ca = ep[7] if len(ep)>7 and ep[7] else 0
-                        capp = ep[8] if len(ep)>8 and ep[8] else 0
-                        pk = ep[10] if len(ep)>10 and ep[10] else ""
-                        pkg = ep[11] if len(ep)>11 and ep[11] else 0
-                        pka = ep[12] if len(ep)>12 and ep[12] else 0
-                        if cg or capp:
-                            st.markdown(f'''<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 20px;margin-top:16px;display:flex;gap:28px;flex-wrap:wrap;">
-                            <div><div style="font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:1.5px;">Career Goals</div><div style="font-size:20px;font-weight:700;">{cg}</div></div>
-                            <div><div style="font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:1.5px;">Career Assists</div><div style="font-size:20px;font-weight:700;">{ca}</div></div>
-                            <div><div style="font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:1.5px;">Career Apps</div><div style="font-size:20px;font-weight:700;">{capp}</div></div>
-                            {f'<div><div style="font-size:9px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:1.5px;">Peak Season</div><div style="font-size:16px;font-weight:700;">{pk}: {pkg}G {pka}A</div></div>' if pk else ""}
-                            </div>''', unsafe_allow_html=True)
-                            # Player notes (career history)
-                            if len(ep)>13 and ep[13]:
-                                with st.expander("Full career history & notes"):
-                                    st.markdown(f'<div style="font-size:12px;color:#374151;line-height:1.8;white-space:pre-wrap;">{ep[13]}</div>', unsafe_allow_html=True)
-                    except: pass
-
-                    # xG vs Goals bar
-                    st.markdown('<div class="section-title">xG vs Actual Output</div>', unsafe_allow_html=True)
-                    fig_cmp = go.Figure()
-                    cats_cmp = ["Goals","Assists","Shots on Target"]
-                    actual_vals = [sg(s1,7), sg(s1,8), sg(s1,10)]
-                    xg_vals = [round(float(sg(s1,11,0)),2), round(float(sg(s1,12,0)),2), sg(s1,9)]
-                    fig_cmp.add_trace(go.Bar(name="Actual",x=cats_cmp,y=actual_vals,marker_color="#16a34a"))
-                    fig_cmp.add_trace(go.Bar(name="Expected",x=cats_cmp,y=xg_vals,marker_color="#93c5fd",opacity=0.7))
-                    fig_cmp.update_layout(barmode="group",paper_bgcolor="white",plot_bgcolor="white",height=280,margin=dict(l=10,r=10,t=20,b=20),legend=dict(orientation="h"))
-                    st.plotly_chart(fig_cmp,use_container_width=True)
-
+                    for col,lbl,val,sub,style in [(k1,'Goals',sg(s1,7),f'{g90}/90','positive'),(k2,'Assists',sg(s1,8),f'{a90}/90','positive'),(k3,'Minutes',f"{int(sg(s1,6)):,}",f'{sg(s1,2)} apps','neutral'),(k4,'xG',xg_v,'expected','highlight'),(k5,'Shots',sg(s1,9),f'{sg(s1,10)} on target','neutral'),(k6,'xG/Shot',xg_per_shot,'shot quality','neutral')]:
+                        with col: st.markdown(f'<div class="metric-card {style}"><div class="metric-label">{lbl}</div><div class="metric-value">{val}</div><div style="font-size:9px;color:#9ca3af;margin-top:2px;">{sub}</div></div>', unsafe_allow_html=True)
+                    st.markdown('', unsafe_allow_html=True)
+                    # Row 2: Efficiency + discipline
+                    k7,k8,k9,k10,k11,k12 = st.columns(6)
+                    for col,lbl,val,sub,style in [(k7,'Conv%',f'{conv}%','goals/shots','neutral'),(k8,'xA',xa_v,'exp assists','neutral'),(k9,'G+A',int(sg(s1,7))+int(sg(s1,8)),'combined','neutral'),(k10,'Yellow',sg(s1,23),'cards','neutral'),(k11,'Red',sg(s1,24),'cards','neutral'),(k12,'Passes',f"{int(sg(s1,13)):,}" if sg(s1,13) else '—','completed','neutral')]:
+                        with col: st.markdown(f'<div class="metric-card {style}"><div class="metric-label">{lbl}</div><div class="metric-value">{val}</div><div style="font-size:9px;color:#9ca3af;margin-top:2px;">{sub}</div></div>', unsafe_allow_html=True)
+                    # Output vs Expected chart
+                    st.markdown('<div class="section-title" style="margin-top:24px;">Output vs Expected</div>', unsafe_allow_html=True)
+                    fc1, fc2 = st.columns(2)
+                    with fc1:
+                        fig_bar = go.Figure()
+                        fig_bar.add_trace(go.Bar(name='Actual Goals',x=['Goals'],y=[sg(s1,7)],marker_color='#16a34a'))
+                        fig_bar.add_trace(go.Bar(name='xG',x=['Goals'],y=[xg_v],marker_color='#93c5fd',opacity=0.8))
+                        fig_bar.add_trace(go.Bar(name='Actual Assists',x=['Assists'],y=[sg(s1,8)],marker_color='#2563eb'))
+                        fig_bar.add_trace(go.Bar(name='xA',x=['Assists'],y=[xa_v],marker_color='#bfdbfe',opacity=0.8))
+                        fig_bar.update_layout(barmode='group',paper_bgcolor='white',plot_bgcolor='white',height=260,margin=dict(l=10,r=10,t=20,b=20),legend=dict(orientation='h',y=-0.4))
+                        st.plotly_chart(fig_bar,use_container_width=True)
+                    with fc2:
+                        cats=['Goals/90','Assists/90','Conversion','Shot Quality','G+A']
+                        maxv=[0.6,0.4,20,0.2,20]
+                        vals=[g90,a90,conv,xg_per_shot*10,int(sg(s1,7))+int(sg(s1,8))]
+                        norm=[min(10,round(v/m*10,1)) for v,m in zip(vals,maxv)]
+                        fig_radar=go.Figure()
+                        fig_radar.add_trace(go.Scatterpolar(r=norm+[norm[0]],theta=cats+[cats[0]],fill='toself',line_color='#1a3a8a',fillcolor='rgba(26,58,138,0.15)'))
+                        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True,range=[0,10])),paper_bgcolor='white',height=260,margin=dict(l=20,r=20,t=20,b=20),showlegend=False)
+                        st.plotly_chart(fig_radar,use_container_width=True)
+                # Career section
+                try:
+                    cg=ep[6] if len(ep)>6 and ep[6] else 0
+                    ca=ep[7] if len(ep)>7 and ep[7] else 0
+                    capp=ep[8] if len(ep)>8 and ep[8] else 0
+                    cmins=ep[9] if len(ep)>9 and ep[9] else 0
+                    pk=ep[10] if len(ep)>10 and ep[10] else ''
+                    pkg=ep[11] if len(ep)>11 and ep[11] else 0
+                    pka=ep[12] if len(ep)>12 and ep[12] else 0
+                    notes=ep[13] if len(ep)>13 and ep[13] else ''
+                    if cg or capp:
+                        st.markdown('<div class="section-title" style="margin-top:28px;">Career Overview</div>', unsafe_allow_html=True)
+                        ch1,ch2,ch3,ch4=st.columns(4)
+                        for col,lbl,val in [(ch1,'Career Goals',cg),(ch2,'Career Assists',ca),(ch3,'Career Apps',capp),(ch4,'Career Mins',f"{int(cmins):,}" if cmins else '—')]:
+                            with col: st.markdown(f'<div class="metric-card highlight"><div class="metric-label">{lbl}</div><div class="metric-value">{val}</div></div>', unsafe_allow_html=True)
+                        if pk:
+                            st.markdown(f'<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 16px;margin-top:12px;font-size:12px;"><span style="font-weight:700;color:#92400e;">Peak Season:</span> {pk} — {pkg} goals, {pka} assists</div>', unsafe_allow_html=True)
+                        # Parse season history from notes for trajectory chart
+                        if notes:
+                            import re as _re
+                            season_rows=[]
+                            for seg in notes.replace(';','\n').split('\n'):
+                                seg=seg.strip()
+                                m=_re.search(r'(20\d\d[-/]2?0?\d\d)',seg)
+                                gm=_re.search(r'(\d+)\s*[Gg]',seg)
+                                am=_re.search(r'(\d+)\s*[Aa]',seg)
+                                if m and gm and int(gm.group(1))<50:
+                                    season_rows.append({'s':m.group(1)[:7],'g':int(gm.group(1)),'a':int(am.group(1)) if am else 0})
+                            if len(season_rows)>=2:
+                                st.markdown('<div class="section-title" style="margin-top:24px;">Career Trajectory</div>', unsafe_allow_html=True)
+                                fig_t=go.Figure()
+                                fig_t.add_trace(go.Scatter(x=[r['s'] for r in season_rows],y=[r['g'] for r in season_rows],name='Goals',mode='lines+markers',line=dict(color='#16a34a',width=2.5),marker=dict(size=7)))
+                                fig_t.add_trace(go.Scatter(x=[r['s'] for r in season_rows],y=[r['a'] for r in season_rows],name='Assists',mode='lines+markers',line=dict(color='#2563eb',width=2.5),marker=dict(size=7)))
+                                fig_t.add_trace(go.Bar(x=[r['s'] for r in season_rows],y=[r['g']+r['a'] for r in season_rows],name='G+A',marker_color='rgba(245,200,66,0.25)'))
+                                fig_t.update_layout(paper_bgcolor='white',plot_bgcolor='white',height=300,margin=dict(l=10,r=10,t=20,b=60),legend=dict(orientation='h'),xaxis=dict(tickangle=45),yaxis=dict(gridcolor='#f3f4f6'))
+                                st.plotly_chart(fig_t,use_container_width=True)
+                            with st.expander('📋 Full career history & notes'):
+                                st.markdown(f'<div style="font-size:12px;color:#374151;line-height:2;white-space:pre-wrap;">{notes[:3000]}</div>', unsafe_allow_html=True)
+                except Exception: pass
             st.markdown('<div class="section-title">Performance Audit Report</div>', unsafe_allow_html=True)
 
             if epr:
@@ -4789,3 +4806,145 @@ Or type rough notes: Erling Haaland, 24, striker Man City, 27 goals 5 assists th
             pname5 = ep5[0] if ep5 else "Player"
 
             render_map_analysis_panel(pname5, f"pro_{epid5}", is_pro=True)
+
+    with tab6:
+        st.markdown('<div class="section-title">Team AI Import</div>', unsafe_allow_html=True)
+        st.markdown('<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:#15803d;">Paste team stats from FBref, Opta Analyst, FootyStats, Premier League, WhoScored or any source. Claude will extract the full team profile, performance metrics, and build a team dashboard.</div>', unsafe_allow_html=True)
+
+        team_raw = st.text_area("Paste team data here", placeholder="Paste any team data — league table, team stats page, season summary, squad stats from FBref/Opta/FootyStats/PL official...", height=200, key="team_ai_raw", label_visibility="collapsed")
+
+        if st.button("✨ Parse Team Data", key="team_parse_btn"):
+            if team_raw and team_raw.strip():
+                with st.spinner("Claude is reading the team data..."):
+                    try:
+                        import json as _json2
+                        raw = ai_clean_data(team_raw, "team")
+                        raw = raw.strip()
+                        if raw.startswith("```"):
+                            raw = raw.split("```")[1]
+                            if raw.startswith("json"): raw = raw[4:]
+                        raw = raw.strip()
+                        team_data = _json2.loads(raw)
+                        if not isinstance(team_data, list): team_data = [team_data]
+                        st.session_state["team_ai_parsed"] = team_data
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Could not parse: {str(e)[:120]}")
+            else:
+                st.warning("Paste some team data first.")
+
+        if st.session_state.get("team_ai_parsed"):
+            teams = st.session_state["team_ai_parsed"]
+            for t in teams:
+                tname = t.get("team_name", "?")
+                league = t.get("league", "")
+                season = t.get("season", "")
+                mp = t.get("matches_played", 0)
+                w = t.get("wins", 0); d = t.get("draws", 0); l = t.get("losses", 0)
+                gf = t.get("goals_for", 0); ga = t.get("goals_against", 0)
+                gd = gf - ga
+                pts = w*3 + d
+                xgf = t.get("xg_for", 0); xga = t.get("xg_against", 0)
+                poss = t.get("possession_pct", 0)
+                pass_acc = t.get("pass_accuracy_pct", 0)
+                spg = t.get("shots_per_game", 0)
+                cs = t.get("clean_sheets", 0)
+                yc = t.get("yellow_cards", 0); rc = t.get("red_cards", 0)
+                form = t.get("form", "")
+                ts = t.get("top_scorer", ""); tsg = t.get("top_scorer_goals", 0)
+                ta = t.get("top_assister", ""); tag = t.get("top_assister_assists", 0)
+                notes = t.get("notes", "")
+
+                # Team hero card
+                st.markdown(f"""<div style="background:linear-gradient(135deg,#04080f 0%,#1a3a8a 55%,#0f1f5c 100%);border-radius:16px;padding:32px 36px;margin-bottom:20px;">
+<div style="font-size:9px;font-weight:700;color:rgba(245,200,66,0.65);letter-spacing:4px;text-transform:uppercase;margin-bottom:8px;">Scout IQ·FC · Team Profile</div>
+<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+<div>
+<div style="font-family:Georgia,serif;font-size:36px;font-weight:700;color:#fff;margin-bottom:4px;">{tname}</div>
+<div style="font-size:12px;color:rgba(255,255,255,0.45);">{league} &nbsp;·&nbsp; {season} &nbsp;·&nbsp; {mp} matches played</div>
+{f'<div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:4px;">Manager: {t.get("manager","")}</div>' if t.get("manager") else ""}
+</div>
+<div style="text-align:right;">
+<div style="font-size:9px;color:rgba(245,200,66,0.6);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Points</div>
+<div style="font-size:48px;font-weight:800;color:#f5c842;line-height:1;">{pts}</div>
+<div style="font-size:11px;color:rgba(255,255,255,0.35);">{w}W {d}D {l}L</div>
+</div>
+</div>
+{f'<div style="font-size:13px;font-weight:700;color:#fff;margin-top:16px;letter-spacing:2px;">{" ".join(["🟢" if r=="W" else "🟡" if r=="D" else "🔴" for r in form])}</div>' if form else ""}
+</div>""", unsafe_allow_html=True)
+
+                # Metric grid
+                m1,m2,m3,m4,m5,m6 = st.columns(6)
+                for col,lbl,val,sub,style in [
+                    (m1,"Goals For",gf,f"{round(gf/max(1,mp),1)}/game","positive"),
+                    (m2,"Goals Against",ga,f"{round(ga/max(1,mp),1)}/game","neutral"),
+                    (m3,"Goal Diff",f"+{gd}" if gd>0 else str(gd),"net","highlight"),
+                    (m4,"xG For",xgf,f"expected","neutral"),
+                    (m5,"xG Against",xga,"expected","neutral"),
+                    (m6,"Clean Sheets",cs,f"{round(cs/max(1,mp)*100)}%","positive"),
+                ]:
+                    with col: st.markdown(f'<div class="metric-card {style}"><div class="metric-label">{lbl}</div><div class="metric-value">{val}</div><div style="font-size:9px;color:#9ca3af;margin-top:2px;">{sub}</div></div>', unsafe_allow_html=True)
+
+                st.markdown("", unsafe_allow_html=True)
+                m7,m8,m9,m10 = st.columns(4)
+                for col,lbl,val,sub in [
+                    (m7,"Possession",f"{poss}%","avg per game"),
+                    (m8,"Pass Accuracy",f"{pass_acc}%","completed %"),
+                    (m9,"Shots/Game",spg,"attempts"),
+                    (m10,"Discipline",f"{yc}Y {rc}R","cards"),
+                ]:
+                    with col: st.markdown(f'<div class="metric-card"><div class="metric-label">{lbl}</div><div class="metric-value">{val}</div><div style="font-size:9px;color:#9ca3af;margin-top:2px;">{sub}</div></div>', unsafe_allow_html=True)
+
+                # Top performers
+                if ts or ta:
+                    st.markdown('<div class="section-title" style="margin-top:20px;">Top Performers</div>', unsafe_allow_html=True)
+                    tp1, tp2 = st.columns(2)
+                    with tp1:
+                        st.markdown(f'<div class="metric-card positive"><div class="metric-label">Top Scorer</div><div class="metric-value">{ts}</div><div style="font-size:13px;font-weight:700;color:#16a34a;margin-top:4px;">{tsg} goals</div></div>', unsafe_allow_html=True)
+                    with tp2:
+                        st.markdown(f'<div class="metric-card"><div class="metric-label">Top Assister</div><div class="metric-value">{ta}</div><div style="font-size:13px;font-weight:700;color:#2563eb;margin-top:4px;">{tag} assists</div></div>', unsafe_allow_html=True)
+
+                # xG vs Actual
+                if xgf > 0:
+                    st.markdown('<div class="section-title" style="margin-top:20px;">Performance vs Expected</div>', unsafe_allow_html=True)
+                    fig_t = go.Figure()
+                    fig_t.add_trace(go.Bar(name="Goals For",x=["Attack","Defence"],y=[gf,0],marker_color="#16a34a"))
+                    fig_t.add_trace(go.Bar(name="xG For",x=["Attack","Defence"],y=[xgf,0],marker_color="#bbf7d0",opacity=0.8))
+                    fig_t.add_trace(go.Bar(name="Goals Against",x=["Attack","Defence"],y=[0,ga],marker_color="#dc2626"))
+                    fig_t.add_trace(go.Bar(name="xG Against",x=["Attack","Defence"],y=[0,xga],marker_color="#fecaca",opacity=0.8))
+                    fig_t.update_layout(barmode="group",paper_bgcolor="white",plot_bgcolor="white",height=260,margin=dict(l=10,r=10,t=20,b=20),legend=dict(orientation="h",y=-0.3))
+                    st.plotly_chart(fig_t,use_container_width=True)
+
+                # Save button
+                sc1, sc2, _ = st.columns([1,1,4])
+                with sc1:
+                    if st.button("✅ Save Team Profile", key=f"save_team_{tname}"):
+                        try:
+                            cursor.execute("DELETE FROM team_profiles WHERE team_name=? AND season=?", (tname, season))
+                            cursor.execute("""INSERT INTO team_profiles (team_name,league,season,manager,matches_played,wins,draws,losses,goals_for,goals_against,xg_for,xg_against,possession_pct,pass_accuracy_pct,shots_per_game,clean_sheets,yellow_cards,red_cards,top_scorer,top_scorer_goals,top_assister,top_assister_assists,form,notes) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                                (tname,league,season,t.get("manager",""),mp,w,d,l,gf,ga,xgf,xga,poss,pass_acc,spg,cs,yc,rc,ts,tsg,ta,tag,form,notes[:2000]))
+                            conn.commit()
+                            st.success(f"Team profile for {tname} saved!")
+                            st.session_state["team_ai_parsed"] = None
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Save failed: {e}")
+                with sc2:
+                    if st.button("✕ Discard", key=f"disc_team_{tname}"):
+                        st.session_state["team_ai_parsed"] = None; st.rerun()
+
+        # Show saved team profiles
+        cursor.execute("SELECT * FROM team_profiles ORDER BY created_at DESC")
+        saved_teams = cursor.fetchall()
+        if saved_teams:
+            st.markdown('<div class="section-title" style="margin-top:24px;">Saved Team Profiles</div>', unsafe_allow_html=True)
+            for t_row in saved_teams:
+                with st.expander(f"{t_row[1]} — {t_row[2]} {t_row[3]}"):
+                    sc1,sc2,sc3,sc4,sc5 = st.columns(5)
+                    for col,lbl,val in [(sc1,"W/D/L",f"{t_row[6]}/{t_row[7]}/{t_row[8]}"),(sc2,"Goals",f"{t_row[9]}-{t_row[10]}"),(sc3,"xG",f"{t_row[11]:.1f}-{t_row[12]:.1f}"),(sc4,"Poss",f"{t_row[13]}%"),(sc5,"CS",t_row[16])]:
+                        with col: st.markdown(f'<div class="metric-card"><div class="metric-label">{lbl}</div><div class="metric-value">{val}</div></div>', unsafe_allow_html=True)
+                    if t_row[24]:
+                        st.markdown(f'<div style="font-size:11px;color:#374151;line-height:1.8;margin-top:12px;">{t_row[24][:500]}</div>', unsafe_allow_html=True)
+                    if st.button("Delete", key=f"del_team_{t_row[0]}"):
+                        cursor.execute("DELETE FROM team_profiles WHERE id=?", (t_row[0],))
+                        conn.commit(); st.rerun()
