@@ -818,7 +818,7 @@ def ai_report(prompt):
     return r.content[0].text
 
 def ai_clean_data(raw_text, data_type="youth"):
-    """Parse any unstructured football data into platform JSON format."""
+    """Parse any unstructured football data into platform JSON."""
     api_key = get_api_key()
     if not api_key: return "[]"
     client = anthropic.Anthropic(api_key=api_key)
@@ -840,73 +840,74 @@ def ai_clean_data(raw_text, data_type="youth"):
             "tackles_won (integer), coachability_rating (1-10), attitude_score (1-10),\n"
             "consistency_rating (1-10), coach_notes (string)\n\n"
             "Defaults: 7 for ratings, 90 for minutes, 8.0 for distance, Right foot, U16.\n"
-            "No markdown. No explanation. Return ONLY the JSON array.\n\n"
-            "Raw data:\n"
+            "No markdown. No explanation. Return ONLY the JSON array.\n\nRaw data:\n"
         ) + raw_text
 
     else:
         prompt = (
-            "You are an expert football data analyst. Extract a complete, precise player profile from the raw text below.\n"
-            "This data may come from FBref, Transfermarkt, WhoScored, Sofascore, Flashscore, Premier League site, or any other source.\n"
-            "It may be messy, misaligned, have repeated headers, vertical layouts, or mixed formats. Read it carefully.\n\n"
+            "You are a senior football data analyst. Parse the raw player data below with precision.\n\n"
 
-            "== HOW TO READ THE DATA ==\n"
-            "Most player pages have 3 distinct sections:\n"
-            "SECTION A - Summary box at top: Shows CURRENT SEASON totals stacked vertically\n"
-            "  Example layout: '27 / appearances / 2,001 / minutes played / 6 / goals / 3 / assists'\n"
-            "  These are reliable for: appearances, minutes, goals, assists\n\n"
-            "SECTION B - Shot/attacking stats table with columns: name | apps | mins | goals | xG | shots | SOT | conv%\n"
-            "  Example row: 'Bukayo Saka 27 2001 6 6.99 -0.99 63 26 9.52%'\n"
-            "  Read LEFT TO RIGHT: apps=27, mins=2001, goals=6, xG=6.99 (NOT goals), shots=63, SOT=26\n"
-            "  xG is always a decimal like 6.99 or 10.35 - it measures shot quality, NOT actual goals\n\n"
-            "SECTION C - Career history table with headers: Season Age Squad Comp MP Starts Min Gls Ast CrdY CrdR\n"
-            "  Each ROW = one season. Last data row before totals = current season\n"
-            "  TOTALS ROW = '8 Seasons' or 'Total' - use this for career_goals, career_assists, career_apps\n\n"
+            "== UNDERSTAND THE STRUCTURE FIRST ==\n"
+            "Pasted player pages typically have these DISTINCT SECTIONS - identify each one:\n\n"
 
-            "== EXTRACTION RULES ==\n"
-            "NAME: The player the page is about (e.g. 'Bukayo Saka') - never the club\n"
-            "TEAM: Current club (e.g. 'Arsenal')\n"
-            "GOALS (current season): Gls column in most recent season row OR summary box. Integer 0-50.\n"
-            "ASSISTS (current season): Ast column in most recent season row OR summary box. Integer 0-30.\n"
-            "XG: The xG decimal value from shot table (e.g. 6.99). Float. NEVER equals goals exactly.\n"
-            "XA: The xA decimal value if present. Float.\n"
-            "SHOTS: Total shots from shot table (e.g. 63). NOT xG.\n"
-            "SHOTS_ON_TARGET: SOT column (e.g. 26).\n"
-            "MINUTES: Min column current season. Remove commas: '2,001' = 2001. Range 0-4000.\n"
-            "APPEARANCES: MP column current season. Integer.\n"
-            "YELLOW_CARDS: CrdY current season row.\n"
-            "RED_CARDS: CrdR current season row.\n"
-            "CAREER_GOALS: Gls from TOTALS row (e.g. 59). Must be >= single season goals.\n"
-            "CAREER_ASSISTS: Ast from TOTALS row (e.g. 48). Must be >= single season assists.\n"
-            "CAREER_APPEARANCES: MP from TOTALS row (e.g. 222).\n"
-            "CAREER_MINUTES: Min from TOTALS row (e.g. 17119). Must be >= single season minutes.\n"
-            "PEAK_SEASON: Scan all rows. Which season had most goals? That year is peak_season.\n"
-            "PEAK_GOALS: Goals in that peak season.\n"
-            "PEAK_ASSISTS: Assists in that peak season.\n\n"
+            "SECTION 1 - HEADLINE SUMMARY (top of page, vertical list):\n"
+            "  Numbers stacked: appearances / minutes / goals / assists\n"
+            "  These are reliable CURRENT SEASON figures.\n\n"
 
-            "== EXTRA STATS ==\n"
-            "Extract any additional stats found and include in coach_notes as key:value pairs:\n"
-            "passes_completed, pass_accuracy_pct, key_passes, progressive_passes,\n"
-            "dribbles_completed, dribbles_attempted, tackles, interceptions,\n"
-            "aerial_duels_won, penalties_scored, touches, touches_in_box,\n"
-            "formation_data (e.g. '64% RW 4-3-3, 30% RW 4-2-3-1'),\n"
-            "any other stat visible in the data\n\n"
+            "SECTION 2 - SHOT QUALITY TABLE (small table, tab-separated):\n"
+            "  Columns in order: name | apps | mins | goals | xG | Goals-vs-xG | shots | SOT | conv% | xG-per-shot\n"
+            "  Example: 'Bukayo Saka 27 2001 6 6.99 -0.99 63 26 9.52% 0.11'\n"
+            "  READ COLUMN BY COLUMN left to right. apps=27, mins=2001, goals=6, xG=6.99, shots=63, SOT=26\n"
+            "  xG is ALWAYS a decimal (6.99). It is expected goals, not actual. Never equals goals exactly.\n\n"
 
-            "== VALIDATION (check before returning) ==\n"
-            "goals: must be 0-50 (single season). If you got 57 or 107 you read career total - fix it.\n"
-            "assists: must be 0-30 (single season). If you got 48 or 57 you read career total - fix it.\n"
-            "xg: must be a decimal float, not matching goals exactly. If xg==goals you made an error.\n"
-            "minutes: must be 0-4000 per season. If you got 17119 that is career total - fix it.\n"
-            "career_goals must be GREATER THAN OR EQUAL TO season goals.\n\n"
+            "SECTION 3 - SEASON-BY-SEASON CAREER TABLE:\n"
+            "  Headers: Season | Age | Squad | Country | Comp | LgRank | MP | Starts | Min | 90s | Gls | Ast | G+A | G-PK | PK | PKatt | CrdY | CrdR\n"
+            "  Each ROW = one season. Read MP, Min, Gls, Ast, CrdY, CrdR per row.\n"
+            "  CURRENT SEASON = the row with the highest year (e.g. 2025-2026 row).\n"
+            "  TOTALS ROW = row starting with '8 Seasons' or 'Total' - this is CAREER data.\n\n"
 
-            "Return ONLY a valid JSON array with ONE object:\n"
-            "{name, team, position (Forward/Midfielder/Defender/Goalkeeper), nationality, age, dob,\n"
-            "season, appearances, minutes, goals, assists, goals_per_90, assists_per_90,\n"
-            "yellow_cards, red_cards, clean_sheets, xg, xa, shots, shots_on_target, conversion_rate,\n"
+            "SECTION 4 - BIOGRAPHICAL INFO:\n"
+            "  Name, DOB, age, current club, nationality, position, formation usage.\n\n"
+
+            "== EXTRACTION TARGETS ==\n"
+            "From CURRENT SEASON (most recent year row in career table):\n"
+            "  season, appearances (MP), minutes (Min, strip commas), goals (Gls), assists (Ast)\n"
+            "  yellow_cards (CrdY), red_cards (CrdR)\n"
+            "  Compute: goals_per_90 = goals / (minutes/90), assists_per_90 = assists / (minutes/90)\n\n"
+
+            "From SHOT QUALITY TABLE:\n"
+            "  xg (the xG decimal), shots, shots_on_target (SOT), conversion_rate (conv%)\n\n"
+
+            "From CAREER TOTALS ROW ('8 Seasons' / 'Total'):\n"
+            "  career_goals (Gls), career_assists (Ast), career_appearances (MP), career_minutes (Min)\n\n"
+
+            "From BIOGRAPHICAL:\n"
+            "  name, team, position (map to Forward/Midfielder/Defender/Goalkeeper), nationality, age, dob\n\n"
+
+            "Peak season: scan all rows, find highest Gls value -> that season/year = peak_season\n\n"
+
+            "coach_notes: Write a structured text block with ALL extra data found:\n"
+            "  - Full career history as: 'YEAR: XG XA, MP apps, Gls/Ast, CrdY/CrdR'\n"
+            "  - Formation usage (e.g. '64% RW 4-3-3, 30% RW 4-2-3-1')\n"
+            "  - Any passes, dribbles, tackles, aerial duels, penalties, touches data\n"
+            "  - Per-90 rates for key metrics\n"
+            "  - Any other stats present in the data\n\n"
+
+            "== SANITY CHECKS - verify before returning ==\n"
+            "  goals must be 0-50. If you have 59, you grabbed career total. Fix: use Gls from 2025-2026 row.\n"
+            "  assists must be 0-30. If you have 48, same problem. Fix: use Ast from 2025-2026 row.\n"
+            "  xg must NOT equal goals exactly. xg is always a decimal float.\n"
+            "  minutes must be 0-4000. If you have 17119, that is career total. Fix: use Min from 2025-2026 row.\n"
+            "  career_goals must be >= season goals. career_minutes must be >= season minutes.\n\n"
+
+            "== OUTPUT ==\n"
+            "Return ONLY a valid JSON array with exactly ONE object:\n"
+            "{name, team, position, nationality, age, dob, season, appearances, minutes,\n"
+            "goals, assists, goals_per_90, assists_per_90, yellow_cards, red_cards, clean_sheets,\n"
+            "xg, xa, shots, shots_on_target, conversion_rate,\n"
             "career_goals, career_assists, career_appearances, career_minutes,\n"
             "peak_season, peak_goals, peak_assists, coach_notes}\n\n"
-            "No markdown. No explanation. JSON array only.\n\n"
-            "RAW DATA:\n"
+            "No markdown. No explanation. JSON array only.\n\nRAW DATA:\n"
         ) + raw_text
 
     r = client.messages.create(
@@ -992,6 +993,78 @@ def to_word(name, meta, text, is_pro=False):
     fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
     buf = io.BytesIO(); doc.save(buf); buf.seek(0)
     return buf
+
+def analyze_visual_map(image_bytes, map_type, player_name, context=""):
+    """Analyze a heatmap or passing map image using Claude vision."""
+    api_key = get_api_key()
+    if not api_key: return "API key not configured."
+    client = anthropic.Anthropic(api_key=api_key)
+    b64 = base64.standard_b64encode(image_bytes).decode()
+    prompt = (
+        f"You are a professional football analyst reviewing a {map_type} for {player_name}.\n"
+        f"{('Context: ' + context) if context else ''}\n\n"
+        "Analyse this image like a senior scout or coaching staff member would. Be specific, precise, and actionable.\n\n"
+        "Structure your analysis in these sections:\n\n"
+        f"1. OVERVIEW\nWhat type of map is this? What does it immediately reveal about {player_name}?\n\n"
+        "2. POSITIONING & ZONES\nWhich areas of the pitch does the player dominate? Where are the hotspots? "
+        "What zones are avoided or underused? Be specific (e.g. right half-space, final third, deep defensive block).\n\n"
+        "3. PATTERNS & TENDENCIES\nWhat habitual movement or passing patterns are visible? "
+        "Diagonal runs, underlapping, overlapping, dropping deep, hugging the touchline, etc.\n\n"
+        "4. STRENGTHS VISIBLE\nWhat does this map confirm about the player's strengths?\n\n"
+        "5. AREAS FOR DEVELOPMENT\nWhat does the map suggest needs work? Blind spots, underused zones, predictable patterns that can be exploited?\n\n"
+        "6. TACTICAL IMPLICATIONS\nHow should a coach use this player based on what you see? "
+        "What formation or role suits these tendencies? What opposition might exploit these patterns?\n\n"
+        "7. SCOUT VERDICT (2 sentences)\nIf you were recommending this player to a club, what does this map tell them?\n\n"
+        "Be direct and professional. Use football terminology. Reference specific areas of the map."
+    )
+    r = client.messages.create(
+        model="claude-opus-4-5",
+        max_tokens=2000,
+        messages=[{"role": "user", "content": [
+            {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": b64}},
+            {"type": "text", "text": prompt}
+        ]}]
+    )
+    return r.content[0].text
+
+def render_map_analysis_panel(player_name, player_id_key, is_pro=False):
+    """Render the heat/passing map upload and analysis panel."""
+    st.markdown('<div class="section-title">Visual Map Analysis</div>', unsafe_allow_html=True)
+    st.markdown('<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:#1d4ed8;">Upload a heatmap, passing map, touch map, or any positional image. Claude will analyse it like a professional scout.</div>', unsafe_allow_html=True)
+    map_type = st.selectbox("Map type", ["Heatmap", "Passing Map", "Touch Map", "Shot Map", "Defensive Map", "Progressive Carries Map", "Other"], key=f"map_type_{player_id_key}", label_visibility="collapsed")
+    context_note = st.text_input("Optional context (e.g. 'vs Liverpool, away leg')", key=f"map_ctx_{player_id_key}", label_visibility="collapsed", placeholder="Add context e.g. vs Liverpool away, GW28...")
+    map_file = st.file_uploader("Upload map image (JPG, PNG)", type=["jpg","jpeg","png","webp"], key=f"map_file_{player_id_key}", label_visibility="collapsed")
+
+    if map_file:
+        col_img, col_btn = st.columns([3, 1])
+        with col_img:
+            st.image(map_file, use_column_width=True)
+        with col_btn:
+            st.markdown('<div style="padding-top:12px;">', unsafe_allow_html=True)
+            if st.button("🔍 Analyse Map", key=f"analyse_map_{player_id_key}"):
+                map_file.seek(0)
+                img_bytes = map_file.read()
+                with st.spinner(f"Analysing {map_type}..."):
+                    analysis = analyze_visual_map(img_bytes, map_type, player_name, context_note)
+                    st.session_state[f"map_analysis_{player_id_key}"] = {
+                        "text": analysis, "map_type": map_type, "player": player_name
+                    }
+            st.markdown('</div>', unsafe_allow_html=True)
+
+    if st.session_state.get(f"map_analysis_{player_id_key}"):
+        result = st.session_state[f"map_analysis_{player_id_key}"]
+        st.markdown(f'<div class="section-title" style="font-size:15px;margin-top:20px;">{result["map_type"]} — {result["player"]}</div>', unsafe_allow_html=True)
+        # Render each section cleanly
+        for para in result["text"].split("\n"):
+            para = para.strip()
+            if not para: continue
+            if para[0].isdigit() and "." in para[:3]:
+                st.markdown(f'<div style="font-size:10px;font-weight:700;color:#1a3a8a;letter-spacing:2px;text-transform:uppercase;margin:18px 0 6px;padding-bottom:6px;border-bottom:1px solid #e5e7ef;">{para}</div>', unsafe_allow_html=True)
+            else:
+                st.markdown(f'<div style="font-size:13px;color:#374151;line-height:1.8;margin-bottom:4px;">{para}</div>', unsafe_allow_html=True)
+        if st.button("Clear Analysis", key=f"clear_map_{player_id_key}"):
+            st.session_state[f"map_analysis_{player_id_key}"] = None; st.rerun()
+
 
 def render_report(text, pid, pname, meta, is_pro=False):
     cursor.execute("SELECT edited_report, coach_notes FROM report_edits WHERE player_id=? ORDER BY edited_at DESC LIMIT 1", (pid,))
@@ -1989,7 +2062,7 @@ if st.session_state.mode == "youth":
                 st.session_state.show_edit_player = False
                 st.rerun()
             st.markdown(f'<div class="page-header"><div><div class="page-title">{ep_edit[1]}</div><div class="page-meta">Edit Player Profile</div></div></div>', unsafe_allow_html=True)
-            ep_tab1, ep_tab2, ep_tab3 = st.tabs(["Profile", "Sessions", "Reports"])
+            ep_tab1, ep_tab2, ep_tab3, ep_tab4 = st.tabs(["Profile", "Sessions", "Reports", "🗺 Maps"])
             with ep_tab1:
                 st.markdown('<div class="section-title">Player Details</div>', unsafe_allow_html=True)
                 with st.form("edit_player_form"):
@@ -2050,6 +2123,8 @@ if st.session_state.mode == "youth":
                 else:
                     st.info("No reports generated yet.")
             st.stop()
+            with ep_tab4:
+                render_map_analysis_panel(ep_edit[1] if ep_edit else "Player", f"youth_edit_{pid}")
     # PLAYER DASHBOARD
     pid = st.session_state.selected_player_id
     cursor.execute("SELECT * FROM players WHERE id=?", (pid,))
@@ -2212,12 +2287,16 @@ if st.session_state.mode == "youth":
                     conn.commit(); st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
+    # ── VISUAL MAP ANALYSIS (youth player) ──
+    render_map_analysis_panel(pl[1], f"youth_{pid}")
+
+
 # ══════════════════════════════════════
 # PRO DATA MODE
 # ══════════════════════════════════════
 else:
     st.markdown('<div class="page-header"><div><div class="page-title">Pro Data</div><div class="page-meta">Professional Match Analysis &nbsp;·&nbsp; Real Performance Data</div></div></div>', unsafe_allow_html=True)
-    tab1,tab2,tab3,tab4=st.tabs(["Upload Data","Player Report","Team Analysis","✨ AI Import"])
+    tab1,tab2,tab3,tab4,tab5=st.tabs(["Upload Data","Player Report","Team Analysis","✨ AI Import","🗺 Visual Maps"])
     with tab1:
         st.markdown('<div class="section-title">Upload Professional Data</div>', unsafe_allow_html=True)
         st.markdown('<div class="upload-banner"><p style="font-size:13px;font-weight:600;color:#1d4ed8;margin-bottom:4px;">Import Professional Player Data</p><p style="font-size:12px;color:#6b7280;margin:0;">Supports season stats files (FootyStats, FBref, WhoScored) or gameweek-by-gameweek match data. Your Premierleague_Data.xlsx format is fully supported.</p></div>', unsafe_allow_html=True)
@@ -2604,3 +2683,12 @@ Or type rough notes: Erling Haaland, 24, striker Man City, 27 goals 5 assists th
                         fig.add_trace(go.Bar(x=top8['Player'],y=top8['Goals'],name='Goals',marker_color='#1a3a8a',opacity=0.7,marker_line_width=0))
                         fig.update_layout(title='xG vs Goals',barmode='group',paper_bgcolor='white',plot_bgcolor='white',margin=dict(l=10,r=10,t=40,b=80),xaxis=dict(showgrid=False,tickangle=45),yaxis=dict(gridcolor='#f3f4f6'),height=300,legend=dict(orientation='h',yanchor='bottom',y=1.02,xanchor='right',x=1))
                         st.plotly_chart(fig,use_container_width=True)
+    with tab5:
+        if not st.session_state.selected_epl_player_id:
+            st.markdown('<div class="no-select"><p style="font-size:40px;margin-bottom:16px;">🗺</p><p>Select a player from the sidebar, then upload their heatmap or passing map.</p></div>', unsafe_allow_html=True)
+        else:
+            epid5 = st.session_state.selected_epl_player_id
+            cursor.execute("SELECT name FROM epl_players WHERE id=?", (epid5,))
+            ep5 = cursor.fetchone()
+            pname5 = ep5[0] if ep5 else "Player"
+            render_map_analysis_panel(pname5, f"pro_{epid5}", is_pro=True)
