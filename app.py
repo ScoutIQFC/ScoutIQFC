@@ -26,6 +26,12 @@ def check_password():
         elif user == "admin1" and pw == "scout2024beta":
             st.session_state["authenticated"] = True
             st.session_state["account_type"] = "beta"
+        elif user == "AZEbeta1" and pw == "scoutAZE1beta":
+            st.session_state["authenticated"] = True
+            st.session_state["account_type"] = "beta"
+        elif user == "AZEbeta2" and pw == "scoutAZE2beta":
+            st.session_state["authenticated"] = True
+            st.session_state["account_type"] = "beta"
         else:
             st.session_state["auth_error"] = True
     if st.session_state.get("authenticated"):
@@ -1027,6 +1033,47 @@ def analyze_visual_map(image_bytes, map_type, player_name, context=""):
     )
     return r.content[0].text
 
+def generate_ai_heatmap(player_name, notes, stats_context=""):
+    """Generate an SVG heatmap from text description using Claude."""
+    api_key = get_api_key()
+    if not api_key: return None, "No API key"
+    client = anthropic.Anthropic(api_key=api_key)
+
+    prompt = (
+        f"You are a football data visualisation expert. Based on the notes and stats below for {player_name}, "
+        "generate a football pitch heatmap as a complete SVG.\n\n"
+        f"Player notes: {notes}\n"
+        f"Stats context: {stats_context}\n\n"
+        "Create an SVG (600x420px) showing a top-down football pitch with a heatmap overlay.\n"
+        "The pitch should have: green background, white lines for pitch markings (centre circle, penalty areas, goal areas, halfway line).\n"
+        "Add coloured heat zones as semi-transparent ellipses/circles:\n"
+        "- Red/orange = high activity zones (where player spends most time)\n"
+        "- Yellow = medium activity\n"
+        "- Light blue = low activity\n"
+        "- No colour = not visited\n\n"
+        "Based on the notes, infer where the player operated on the pitch.\n"
+        "Examples: 'right winger' = hotspot on right flank in final third; "
+        "'striker' = central and box presence; 'central midfielder' = central zones both halves.\n"
+        "Add a title with the player name and a small legend.\n\n"
+        "Return ONLY the complete SVG code starting with <svg and ending with </svg>. No markdown, no explanation."
+    )
+
+    r = client.messages.create(
+        model="claude-opus-4-5",
+        max_tokens=3000,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    svg_text = r.content[0].text.strip()
+    # Clean up markdown if present
+    if svg_text.startswith("```"):
+        parts = svg_text.split("```")
+        for part in parts:
+            if part.strip().startswith("<svg"):
+                svg_text = part.strip()
+                break
+    return svg_text, None
+
+
 def render_map_analysis_panel(player_name, player_id_key, is_pro=False):
     """Render the heat/passing map upload and analysis panel."""
     st.markdown('<div class="section-title">Visual Map Analysis</div>', unsafe_allow_html=True)
@@ -1064,6 +1111,38 @@ def render_map_analysis_panel(player_name, player_id_key, is_pro=False):
                 st.markdown(f'<div style="font-size:13px;color:#374151;line-height:1.8;margin-bottom:4px;">{para}</div>', unsafe_allow_html=True)
         if st.button("Clear Analysis", key=f"clear_map_{player_id_key}"):
             st.session_state[f"map_analysis_{player_id_key}"] = None; st.rerun()
+
+    # AI HEATMAP GENERATOR - youth players only
+    if not is_pro:
+        st.markdown('<div class="section-title" style="font-size:16px;margin-top:28px;">✨ Generate AI Heatmap from Notes</div>', unsafe_allow_html=True)
+        st.markdown('<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:12px;color:#15803d;">No heatmap? Describe how the player moved and Claude will generate one. Include position, zones, movement patterns, pass volume.</div>', unsafe_allow_html=True)
+        ai_hm_notes = st.text_area("Describe movement", placeholder="e.g. Played 35 mins as right winger. Spent most time on right flank in the final third. Made 3 runs behind the defence. 100 passes, 50% completed. Strong on right side.", height=90, key=f"ai_hm_notes_{player_id_key}", label_visibility="collapsed")
+        hm_stats_ctx = ""
+        try:
+            pid_int = int(str(player_id_key).replace("youth_","").replace("youth_edit_","").replace("pro_",""))
+            cursor.execute("SELECT SUM(goals),SUM(assists),SUM(passes_completed),SUM(passes_attempted),SUM(sprint_count),AVG(distance_covered_km) FROM sessions WHERE player_id=?", (pid_int,))
+            r2 = cursor.fetchone()
+            if r2 and r2[0] is not None:
+                hm_stats_ctx = f"Goals:{r2[0]}, assists:{r2[1]}, passes:{r2[2]}/{r2[3]}, sprints:{r2[4]}, dist:{round(r2[5] or 0,1)}km"
+        except: pass
+        if st.button("✨ Generate Heatmap", key=f"gen_hm_{player_id_key}"):
+            if ai_hm_notes.strip():
+                with st.spinner("Generating heatmap..."):
+                    svg_result, err = generate_ai_heatmap(player_name, ai_hm_notes, hm_stats_ctx)
+                    if err: st.error(err)
+                    else: st.session_state[f"ai_heatmap_{player_id_key}"] = svg_result
+            else:
+                st.warning("Add notes about the player movement first.")
+        if st.session_state.get(f"ai_heatmap_{player_id_key}"):
+            svg = st.session_state[f"ai_heatmap_{player_id_key}"]
+            st.markdown('<div style="border:1px solid #e5e7ef;border-radius:12px;padding:16px;background:#fff;margin-top:12px;">', unsafe_allow_html=True)
+            st.components.v1.html(svg, height=440, scrolling=False)
+            st.markdown('</div>', unsafe_allow_html=True)
+            import base64 as _b64hm
+            b64_svg = _b64hm.b64encode(svg.encode()).decode()
+            st.markdown(f'<a href="data:image/svg+xml;base64,{b64_svg}" download="{player_name}_heatmap.svg" style="display:inline-block;background:#04080f;color:#fff;padding:8px 16px;border-radius:8px;font-size:11px;font-weight:700;text-decoration:none;margin-top:10px;">⬇ Download SVG</a>', unsafe_allow_html=True)
+            if st.button("Regenerate", key=f"regen_hm_{player_id_key}"):
+                st.session_state[f"ai_heatmap_{player_id_key}"] = None; st.rerun()
 
 
 def render_report(text, pid, pname, meta, is_pro=False):
@@ -2596,7 +2675,42 @@ Or type rough notes: Erling Haaland, 24, striker Man City, 27 goals 5 assists th
             pro_players = st.session_state["pro_ai_parsed"]
             st.success(f"Claude found {len(pro_players)} player(s) - confirm to save:")
             import pandas as _pd
-            st.dataframe(_pd.DataFrame([{"Name":p.get("name","?"),"Team":p.get("team","?"),"Season":p.get("season","?"),"Goals":p.get("goals",0),"Assists":p.get("assists",0),"xG":p.get("xg",0),"Career G":p.get("career_goals",0),"Career A":p.get("career_assists",0)} for p in pro_players]), use_container_width=True, hide_index=True)
+            # Rich breakdown card per player
+            for p in pro_players:
+                pname_d = p.get("name","?"); team_d = p.get("team","?")
+                season_d = p.get("season","?"); goals_d = p.get("goals",0); assists_d = p.get("assists",0)
+                xg_d = p.get("xg",0); shots_d = p.get("shots",0); sot_d = p.get("shots_on_target",0)
+                conv_d = p.get("conversion_rate",0); mins_d = p.get("minutes",0); apps_d = p.get("appearances",0)
+                yc_d = p.get("yellow_cards",0); rc_d = p.get("red_cards",0)
+                cg_d = p.get("career_goals",0); ca_d = p.get("career_assists",0); capp_d = p.get("career_appearances",0)
+                peak_d = p.get("peak_season",""); peak_g_d = p.get("peak_goals",0); peak_a_d = p.get("peak_assists",0)
+                xg_per_shot = round(float(xg_d)/int(shots_d),2) if shots_d and int(shots_d)>0 else 0
+                g90 = p.get("goals_per_90",0) or (round(float(goals_d)/(float(mins_d)/90),2) if mins_d and float(mins_d)>0 else 0)
+                a90 = p.get("assists_per_90",0) or (round(float(assists_d)/(float(mins_d)/90),2) if mins_d and float(mins_d)>0 else 0)
+                notes_d = p.get("coach_notes","")
+                st.markdown(f"""<div style="background:#fff;border:1px solid #e5e7ef;border-radius:14px;padding:24px 28px;margin-bottom:16px;">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+<div><div style="font-size:22px;font-weight:700;color:#04080f;">{pname_d}</div>
+<div style="font-size:11px;color:#6b7280;margin-top:2px;">{team_d} &nbsp;·&nbsp; {p.get("position","?")} &nbsp;·&nbsp; {p.get("nationality","?")} &nbsp;·&nbsp; Age {p.get("age","?")} &nbsp;·&nbsp; {season_d}</div></div>
+<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 16px;font-size:11px;text-align:center;">
+<div style="font-weight:700;color:#92400e;letter-spacing:1px;text-transform:uppercase;font-size:9px;margin-bottom:2px;">Peak Season</div>
+<div style="font-size:14px;font-weight:700;color:#04080f;">{peak_d}: {peak_g_d}G {peak_a_d}A</div></div></div>
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;">
+<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:9px;color:#16a34a;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Goals</div><div style="font-size:20px;font-weight:700;color:#04080f;">{goals_d}</div><div style="font-size:9px;color:#6b7280;">{g90}/90</div></div>
+<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:9px;color:#1d4ed8;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Assists</div><div style="font-size:20px;font-weight:700;color:#04080f;">{assists_d}</div><div style="font-size:9px;color:#6b7280;">{a90}/90</div></div>
+<div style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:9px;color:#7c3aed;font-weight:700;letter-spacing:1px;text-transform:uppercase;">xG</div><div style="font-size:20px;font-weight:700;color:#04080f;">{xg_d}</div><div style="font-size:9px;color:#6b7280;">expected</div></div>
+<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:9px;color:#c2410c;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Shots</div><div style="font-size:20px;font-weight:700;color:#04080f;">{shots_d}</div><div style="font-size:9px;color:#6b7280;">{sot_d} on target</div></div>
+<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:9px;color:#64748b;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Conv%</div><div style="font-size:20px;font-weight:700;color:#04080f;">{conv_d}%</div><div style="font-size:9px;color:#6b7280;">{xg_per_shot} xG/shot</div></div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;">
+<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase;">Minutes</div><div style="font-size:16px;font-weight:700;color:#04080f;">{mins_d:,}</div><div style="font-size:9px;color:#6b7280;">{apps_d} apps</div></div>
+<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:9px;color:#64748b;font-weight:700;text-transform:uppercase;">Cards</div><div style="font-size:16px;font-weight:700;color:#04080f;">{yc_d}Y {rc_d}R</div><div style="font-size:9px;color:#6b7280;">discipline</div></div>
+<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:9px;color:#dc2626;font-weight:700;text-transform:uppercase;">Career G</div><div style="font-size:16px;font-weight:700;color:#04080f;">{cg_d}</div><div style="font-size:9px;color:#6b7280;">{capp_d} apps</div></div>
+<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:9px;color:#dc2626;font-weight:700;text-transform:uppercase;">Career A</div><div style="font-size:16px;font-weight:700;color:#04080f;">{ca_d}</div><div style="font-size:9px;color:#6b7280;">total assists</div></div>
+</div>
+{f'<div style="background:#f9fafb;border:1px solid #e5e7ef;border-radius:8px;padding:10px 14px;font-size:11px;color:#374151;line-height:1.7;max-height:120px;overflow-y:auto;">{notes_d[:600]}</div>' if notes_d else ''}
+</div>""", unsafe_allow_html=True)
+
             sv1, sv2, _ = st.columns([1,1,4])
             with sv1:
                 if st.button("Save to Platform", key="pro_ai_confirm"):
