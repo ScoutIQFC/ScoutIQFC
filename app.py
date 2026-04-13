@@ -4825,22 +4825,8 @@ Complete all sections. No truncation."""
                 notes = t.get("notes", "")
 
                 # Team hero card
-                st.markdown(f"""<div style="background:linear-gradient(135deg,#04080f 0%,#1a3a8a 55%,#0f1f5c 100%);border-radius:16px;padding:32px 36px;margin-bottom:20px;">
-<div style="font-size:9px;font-weight:700;color:rgba(245,200,66,0.65);letter-spacing:4px;text-transform:uppercase;margin-bottom:8px;">Scout IQ·FC · Team Profile</div>
-<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
-<div>
-<div style="font-family:Georgia,serif;font-size:36px;font-weight:700;color:#fff;margin-bottom:4px;">{tname}</div>
-<div style="font-size:12px;color:rgba(255,255,255,0.45);">{league} &nbsp;·&nbsp; {season} &nbsp;·&nbsp; {mp} matches played</div>
-{f'<div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:4px;">Manager: {t.get("manager","")}</div>' if t.get("manager") else ""}
-</div>
-<div style="text-align:right;">
-<div style="font-size:9px;color:rgba(245,200,66,0.6);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Points</div>
-<div style="font-size:48px;font-weight:800;color:#f5c842;line-height:1;">{pts}</div>
-<div style="font-size:11px;color:rgba(255,255,255,0.35);">{w}W {d}D {l}L</div>
-</div>
-</div>
-{f'<div style="font-size:13px;font-weight:700;color:#fff;margin-top:16px;letter-spacing:2px;">{" ".join(["🟢" if r=="W" else "🟡" if r=="D" else "🔴" for r in form])}</div>' if form else ""}
-</div>""", unsafe_allow_html=True)
+                hero_html = f'<div style="background:linear-gradient(135deg,#04080f 0%,#1a3a8a 55%,#0f1f5c 100%);border-radius:16px;padding:32px 36px;margin-bottom:20px;"><div style="font-size:9px;font-weight:700;color:rgba(245,200,66,0.65);letter-spacing:4px;text-transform:uppercase;margin-bottom:8px;">Scout IQ·FC · Team Profile</div><div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;"><div><div style="font-family:Georgia,serif;font-size:36px;font-weight:700;color:#fff;margin-bottom:4px;">{tname}</div><div style="font-size:12px;color:rgba(255,255,255,0.45);">{league} · {season} · {mp} matches</div></div><div style="text-align:right;"><div style="font-size:9px;color:rgba(245,200,66,0.6);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">Points</div><div style="font-size:48px;font-weight:800;color:#f5c842;line-height:1;">{pts}</div><div style="font-size:11px;color:rgba(255,255,255,0.35);">{w}W {d}D {l}L</div></div></div></div>'
+                st.markdown(hero_html, unsafe_allow_html=True)
 
                 # Metric grid
                 m1,m2,m3,m4,m5,m6 = st.columns(6)
